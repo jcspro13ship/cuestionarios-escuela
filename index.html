@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuestionarios Escuela</title>
+    <title>Cuestionarios - Escuela de Reproducción</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -23,26 +23,11 @@
             width: 100%;
             box-shadow: 0 4px 24px rgba(0,0,0,0.10);
         }
-        h1 {
-            color: #1a237e;
-            margin-bottom: 8px;
-            font-size: 1.6rem;
-        }
-        .subtitle {
-            color: #666;
-            margin-bottom: 24px;
-            font-size: 0.95rem;
-        }
-        .form-group {
-            margin-bottom: 16px;
-        }
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 6px;
-            color: #333;
-        }
-        input, select {
+        h1 { color: #1a237e; margin-bottom: 6px; font-size: 1.6rem; }
+        .subtitle { color: #666; margin-bottom: 24px; font-size: 0.95rem; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; }
+        input {
             width: 100%;
             padding: 10px 14px;
             border: 2px solid #e0e0e0;
@@ -50,10 +35,7 @@
             font-size: 1rem;
             transition: border 0.2s;
         }
-        input:focus, select:focus {
-            outline: none;
-            border-color: #3f51b5;
-        }
+        input:focus { outline: none; border-color: #3f51b5; }
         .btn {
             background: #3f51b5;
             color: white;
@@ -63,13 +45,61 @@
             font-size: 1rem;
             cursor: pointer;
             width: 100%;
-            margin-top: 8px;
+            margin-top: 4px;
             transition: background 0.2s;
         }
         .btn:hover { background: #303f9f; }
-        .btn:disabled { background: #9fa8da; cursor: not-allowed; }
+        .btn-secondary {
+            background: white;
+            color: #3f51b5;
+            border: 2px solid #3f51b5;
+            margin-top: 10px;
+        }
+        .btn-secondary:hover { background: #e8eaf6; }
 
-        /* Cuestionario */
+        /* Grilla de cuestionarios */
+        #catalogo-section { display: none; }
+        .bienvenida {
+            background: #e8eaf6;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            color: #1a237e;
+            font-weight: 600;
+        }
+        .cuestionarios-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 480px) {
+            .cuestionarios-grid { grid-template-columns: 1fr; }
+        }
+        .quiz-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .quiz-card:hover {
+            border-color: #3f51b5;
+            background: #f0f2ff;
+            transform: translateY(-2px);
+        }
+        .quiz-card .emoji { font-size: 2.2rem; margin-bottom: 8px; }
+        .quiz-card .titulo { font-weight: 700; color: #1a237e; font-size: 1rem; }
+        .quiz-card .desc { color: #666; font-size: 0.82rem; margin-top: 4px; }
+        .quiz-card .preguntas { 
+            color: #3f51b5; 
+            font-size: 0.8rem; 
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        /* Cuestionario activo */
         #quiz-section { display: none; }
         .question-card {
             background: #f8f9ff;
@@ -78,11 +108,7 @@
             margin-bottom: 16px;
             border-left: 4px solid #3f51b5;
         }
-        .question-text {
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #222;
-        }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #222; }
         .options label {
             display: flex;
             align-items: center;
@@ -95,28 +121,10 @@
             transition: background 0.15s;
         }
         .options label:hover { background: #e8eaf6; }
-        .options input[type="radio"] {
-            width: auto;
-            accent-color: #3f51b5;
-        }
-        .progress {
-            background: #e0e0e0;
-            border-radius: 8px;
-            height: 8px;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            background: #3f51b5;
-            height: 100%;
-            border-radius: 8px;
-            transition: width 0.4s;
-        }
-        .question-counter {
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-        }
+        .options input[type="radio"] { width: auto; accent-color: #3f51b5; }
+        .progress { background: #e0e0e0; border-radius: 8px; height: 8px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar { background: #3f51b5; height: 100%; border-radius: 8px; transition: width 0.4s; }
+        .question-counter { color: #666; font-size: 0.9rem; margin-bottom: 8px; }
 
         /* Resultado */
         #result-section { display: none; text-align: center; }
@@ -136,148 +144,173 @@
         }
         .score-circle span { font-size: 0.85rem; font-weight: 400; }
         .result-msg { color: #444; margin-bottom: 20px; font-size: 1.05rem; }
-        .sending-msg { color: #3f51b5; font-style: italic; margin-bottom: 10px; }
         .success-msg { color: #2e7d32; font-weight: 600; }
         .error-msg { color: #c62828; font-weight: 600; }
+        .sending-msg { color: #3f51b5; font-style: italic; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 <div class="container">
 
-    <!-- Sección de inicio -->
+    <!-- PASO 1: Solo pedir nombre -->
     <div id="start-section">
-        <h1>📚 Cuestionarios Escuela</h1>
-        <p class="subtitle">Completa tus datos para comenzar</p>
-
+        <h1>🐾 Escuela de Reproducción</h1>
+        <p class="subtitle">Ingresa tu nombre para ver los cuestionarios disponibles</p>
         <div class="form-group">
-            <label>Nombre completo</label>
-            <input type="text" id="nombre" placeholder="Ej: María García López">
+            <label>Tu nombre completo</label>
+            <input type="text" id="nombre" placeholder="Ej: Carlos Ramírez" onkeydown="if(event.key==='Enter') entrar()">
         </div>
-        <div class="form-group">
-            <label>Grado</label>
-            <select id="grado">
-                <option value="">-- Selecciona --</option>
-                <option>1° Primaria</option>
-                <option>2° Primaria</option>
-                <option>3° Primaria</option>
-                <option>4° Primaria</option>
-                <option>5° Primaria</option>
-                <option>6° Primaria</option>
-                <option>1° Secundaria</option>
-                <option>2° Secundaria</option>
-                <option>3° Secundaria</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Cuestionario</label>
-            <select id="cuestionario">
-                <option value="">-- Selecciona --</option>
-                <option value="matematicas">Matemáticas</option>
-                <option value="ciencias">Ciencias Naturales</option>
-                <option value="español">Español</option>
-                <option value="historia">Historia</option>
-            </select>
-        </div>
-
-        <button class="btn" onclick="iniciarCuestionario()">Comenzar →</button>
+        <button class="btn" onclick="entrar()">Ver cuestionarios →</button>
     </div>
 
-    <!-- Sección del cuestionario -->
+    <!-- PASO 2: Catálogo de cuestionarios -->
+    <div id="catalogo-section">
+        <h1>📋 Cuestionarios disponibles</h1>
+        <div class="bienvenida" id="bienvenida-msg"></div>
+        <div class="cuestionarios-grid" id="cuestionarios-grid"></div>
+    </div>
+
+    <!-- PASO 3: Cuestionario activo -->
     <div id="quiz-section">
-        <h1 id="quiz-title">Cuestionario</h1>
+        <h1 id="quiz-title"></h1>
         <p class="subtitle" id="quiz-alumno"></p>
         <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
         <p class="question-counter" id="question-counter"></p>
         <div id="questions-container"></div>
-        <button class="btn" id="btn-enviar" onclick="enviarRespuestas()">Enviar respuestas</button>
+        <button class="btn" onclick="enviarRespuestas()">Enviar respuestas ✓</button>
+        <button class="btn btn-secondary" onclick="volverCatalogo()">← Volver al catálogo</button>
     </div>
 
-    <!-- Sección de resultado -->
+    <!-- PASO 4: Resultado -->
     <div id="result-section">
         <div class="score-circle">
             <div id="score-number">0</div>
             <span>de <span id="score-total">0</span></span>
         </div>
+        <h2 id="quiz-title-result" style="margin-bottom:8px;color:#1a237e;"></h2>
         <p class="result-msg" id="result-msg"></p>
-        <p class="sending-msg" id="sending-msg">Guardando resultados...</p>
+        <p class="sending-msg" id="sending-msg">💾 Guardando resultado...</p>
         <p id="sheets-status"></p>
-        <button class="btn" onclick="reiniciar()" style="margin-top:20px">Hacer otro cuestionario</button>
+        <button class="btn" onclick="volverCatalogo()" style="margin-top:16px">← Hacer otro cuestionario</button>
     </div>
 
 </div>
 
 <script>
 // ============================================================
-// ⚙️ CONFIGURACIÓN - Solo cambia esta URL
+// ⚙️ CONFIGURACIÓN
 // ============================================================
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzW3XSoDR3hYRMLQpMWY7y1u9TLkIpzXckNzSyIB-qb3MEg_awCm7E-4KUDk_K51_k/exec';
-// ============================================================
+const GOOGLE_SCRIPT_URL = 'TU_URL_DE_GOOGLE_APPS_SCRIPT_AQUI';
 
-// Base de preguntas por cuestionario
-const PREGUNTAS = {
-    matematicas: [
-        { pregunta: "¿Cuánto es 7 × 8?", opciones: ["54", "56", "64", "48"], correcta: 1 },
-        { pregunta: "¿Qué fracción es mayor?", opciones: ["1/2", "1/3", "1/4", "1/5"], correcta: 0 },
-        { pregunta: "¿Cuánto es 144 ÷ 12?", opciones: ["11", "13", "12", "14"], correcta: 2 },
-        { pregunta: "¿Cuál es el área de un cuadrado de lado 5?", opciones: ["10", "20", "25", "15"], correcta: 2 },
-        { pregunta: "¿Cuánto es 15% de 200?", opciones: ["25", "30", "35", "20"], correcta: 1 },
-    ],
-    ciencias: [
-        { pregunta: "¿Cuál es el planeta más grande del sistema solar?", opciones: ["Saturno", "Júpiter", "Neptuno", "Urano"], correcta: 1 },
-        { pregunta: "¿Qué proceso usan las plantas para hacer su alimento?", opciones: ["Respiración", "Digestión", "Fotosíntesis", "Osmosis"], correcta: 2 },
-        { pregunta: "¿Cuántos huesos tiene el cuerpo humano adulto?", opciones: ["106", "206", "306", "156"], correcta: 1 },
-        { pregunta: "¿Qué órgano bombea la sangre?", opciones: ["Pulmón", "Hígado", "Riñón", "Corazón"], correcta: 3 },
-        { pregunta: "¿Cuál es la fórmula química del agua?", opciones: ["CO2", "H2O", "O2", "NaCl"], correcta: 1 },
-    ],
-    español: [
-        { pregunta: "¿Cuál es el sujeto en: 'Los niños juegan en el parque'?", opciones: ["juegan", "parque", "Los niños", "en el parque"], correcta: 2 },
-        { pregunta: "¿Qué tipo de palabra es 'rápidamente'?", opciones: ["Sustantivo", "Adjetivo", "Adverbio", "Verbo"], correcta: 2 },
-        { pregunta: "¿Cuál palabra está bien escrita?", opciones: ["Havía", "Había", "Abia", "Habia"], correcta: 1 },
-        { pregunta: "¿Qué signo va al inicio de una pregunta en español?", opciones: ["?", "¿", "¡", "!"], correcta: 1 },
-        { pregunta: "Un sinónimo de 'feliz' es:", opciones: ["Triste", "Enojado", "Contento", "Asustado"], correcta: 2 },
-    ],
-    historia: [
-        { pregunta: "¿En qué año llegó Colón a América?", opciones: ["1392", "1492", "1592", "1292"], correcta: 1 },
-        { pregunta: "¿Quién fue el primer presidente de México?", opciones: ["Benito Juárez", "Guadalupe Victoria", "Porfirio Díaz", "Miguel Hidalgo"], correcta: 1 },
-        { pregunta: "¿Cuándo fue la Revolución Francesa?", opciones: ["1689", "1776", "1789", "1799"], correcta: 2 },
-        { pregunta: "¿Qué civilización construyó las pirámides de Egipto?", opciones: ["Griegos", "Romanos", "Egipcios", "Persas"], correcta: 2 },
-        { pregunta: "¿Quién escribió 'El Quijote'?", opciones: ["Lope de Vega", "Cervantes", "Quevedo", "Góngora"], correcta: 1 },
-    ]
+// Agrega o edita tus cuestionarios aquí
+const CUESTIONARIOS = {
+    anatomia: {
+        titulo: "Anatomía Reproductiva",
+        emoji: "🔬",
+        descripcion: "Órganos y estructuras del sistema reproductivo",
+        preguntas: [
+            { pregunta: "¿Cuál es la función principal de los ovarios?", opciones: ["Producir estrógeno y óvulos", "Transportar el óvulo", "Nutrir al embrión", "Producir progesterona únicamente"], correcta: 0 },
+            { pregunta: "¿Cómo se llama el proceso de liberación del óvulo?", opciones: ["Menstruación", "Ovulación", "Fecundación", "Implantación"], correcta: 1 },
+            { pregunta: "¿Dónde ocurre normalmente la fecundación?", opciones: ["En el útero", "En el ovario", "En la trompa de Falopio", "En la vagina"], correcta: 2 },
+            { pregunta: "¿Cuál es la función del útero?", opciones: ["Producir óvulos", "Alojar y nutrir al feto", "Filtrar la sangre", "Regular hormonas"], correcta: 1 },
+            { pregunta: "¿Qué hormona dispara la ovulación?", opciones: ["Estrógeno", "Progesterona", "LH (Hormona Luteinizante)", "FSH"], correcta: 2 },
+        ]
+    },
+    ciclo: {
+        titulo: "Ciclo Reproductivo",
+        emoji: "🔄",
+        descripcion: "Fases, hormonas y cambios del ciclo",
+        preguntas: [
+            { pregunta: "¿Cuántos días dura en promedio el ciclo menstrual?", opciones: ["21 días", "28 días", "35 días", "14 días"], correcta: 1 },
+            { pregunta: "¿Qué fase sigue inmediatamente después de la menstruación?", opciones: ["Lútea", "Ovulatoria", "Folicular", "Secretora"], correcta: 2 },
+            { pregunta: "¿Qué estructura produce progesterona tras la ovulación?", opciones: ["Folículo de Graaf", "Cuerpo lúteo", "Endometrio", "Hipófisis"], correcta: 1 },
+            { pregunta: "¿Cuándo es más probable la fecundación en el ciclo?", opciones: ["En la menstruación", "Al inicio del ciclo", "Alrededor de la ovulación", "Al final del ciclo"], correcta: 2 },
+            { pregunta: "Si no hay fecundación, ¿qué ocurre con el cuerpo lúteo?", opciones: ["Crece más", "Se convierte en folículo", "Degenera y baja la progesterona", "Se mantiene igual"], correcta: 2 },
+        ]
+    },
+    genetica: {
+        titulo: "Genética y Herencia",
+        emoji: "🧬",
+        descripcion: "Cromosomas, genes y transmisión hereditaria",
+        preguntas: [
+            { pregunta: "¿Cuántos cromosomas tiene una célula humana normal?", opciones: ["23", "46", "48", "44"], correcta: 1 },
+            { pregunta: "¿Qué cromosomas determinan el sexo masculino?", opciones: ["XX", "XY", "YY", "X0"], correcta: 1 },
+            { pregunta: "¿Cómo se llama la división celular que forma los gametos?", opciones: ["Mitosis", "Fisión", "Meiosis", "Clonación"], correcta: 2 },
+            { pregunta: "¿Qué es un alelo dominante?", opciones: ["El que siempre se expresa", "El que se oculta", "El que muta frecuentemente", "El que viene del padre"], correcta: 0 },
+            { pregunta: "¿Cuántos cromosomas tiene un óvulo o espermatozoide?", opciones: ["46", "48", "23", "22"], correcta: 2 },
+        ]
+    },
+    biotecnologia: {
+        titulo: "Biotecnología Reproductiva",
+        emoji: "🧪",
+        descripcion: "Técnicas modernas de reproducción asistida",
+        preguntas: [
+            { pregunta: "¿Qué significa FIV?", opciones: ["Fecundación In Vitro", "Fertilización Intrauterina Voluntaria", "Feto In Vivo", "Fase de Implantación Vital"], correcta: 0 },
+            { pregunta: "¿En qué consiste la inseminación artificial?", opciones: ["Crear embriones en laboratorio", "Introducir espermatozoides directamente en el tracto reproductor", "Transferir embriones congelados", "Estimular la ovulación con hormonas"], correcta: 1 },
+            { pregunta: "¿Qué es la criopreservación de embriones?", opciones: ["Cultivar embriones a alta temperatura", "Congelar embriones para uso futuro", "Seleccionar embriones por sexo", "Fertilizar óvulos sin espermatozoides"], correcta: 1 },
+            { pregunta: "¿Para qué sirve el diagnóstico genético preimplantacional (DGP)?", opciones: ["Aumentar la tasa de gemelos", "Detectar enfermedades genéticas antes de implantar el embrión", "Seleccionar el color de ojos", "Acelerar el desarrollo embrionario"], correcta: 1 },
+            { pregunta: "¿Qué es la donación de óvulos?", opciones: ["Una mujer recibe óvulos de otra para lograr el embarazo", "Se transfiere el útero completo", "Se clona el ADN materno", "Se usa un óvulo sin fertilizar"], correcta: 0 },
+        ]
+    }
 };
+// ============================================================
 
-let datosAlumno = {};
-let preguntasActuales = [];
+let nombreAlumno = '';
+let cuestionarioActual = null;
+let claveActual = '';
 let respuestas = [];
 
-function iniciarCuestionario() {
+function entrar() {
     const nombre = document.getElementById('nombre').value.trim();
-    const grado = document.getElementById('grado').value;
-    const cuestionario = document.getElementById('cuestionario').value;
+    if (!nombre) { alert('Por favor escribe tu nombre'); return; }
+    nombreAlumno = nombre;
+    mostrarCatalogo();
+}
 
-    if (!nombre || !grado || !cuestionario) {
-        alert('Por favor completa todos los campos');
-        return;
-    }
+function mostrarCatalogo() {
+    document.getElementById('start-section').style.display = 'none';
+    document.getElementById('quiz-section').style.display = 'none';
+    document.getElementById('result-section').style.display = 'none';
+    document.getElementById('catalogo-section').style.display = 'block';
 
-    datosAlumno = { nombre, grado, cuestionario };
-    preguntasActuales = PREGUNTAS[cuestionario];
-    respuestas = new Array(preguntasActuales.length).fill(null);
+    document.getElementById('bienvenida-msg').textContent =
+        `👋 Hola, ${nombreAlumno}. Elige un cuestionario para comenzar.`;
 
+    const grid = document.getElementById('cuestionarios-grid');
+    grid.innerHTML = '';
+
+    Object.entries(CUESTIONARIOS).forEach(([clave, data]) => {
+        const card = document.createElement('div');
+        card.className = 'quiz-card';
+        card.innerHTML = `
+            <div class="emoji">${data.emoji}</div>
+            <div class="titulo">${data.titulo}</div>
+            <div class="desc">${data.descripcion}</div>
+            <div class="preguntas">${data.preguntas.length} preguntas</div>
+        `;
+        card.onclick = () => iniciarCuestionario(clave);
+        grid.appendChild(card);
+    });
+}
+
+function iniciarCuestionario(clave) {
+    claveActual = clave;
+    cuestionarioActual = CUESTIONARIOS[clave];
+    respuestas = new Array(cuestionarioActual.preguntas.length).fill(null);
+
+    document.getElementById('catalogo-section').style.display = 'none';
+    document.getElementById('quiz-section').style.display = 'block';
     document.getElementById('quiz-title').textContent =
-        document.getElementById('cuestionario').options[document.getElementById('cuestionario').selectedIndex].text;
-    document.getElementById('quiz-alumno').textContent = `Alumno: ${nombre} | ${grado}`;
+        cuestionarioActual.emoji + ' ' + cuestionarioActual.titulo;
+    document.getElementById('quiz-alumno').textContent = `Alumno: ${nombreAlumno}`;
 
     renderPreguntas();
-
-    document.getElementById('start-section').style.display = 'none';
-    document.getElementById('quiz-section').style.display = 'block';
 }
 
 function renderPreguntas() {
     const container = document.getElementById('questions-container');
     container.innerHTML = '';
-
-    preguntasActuales.forEach((p, i) => {
+    cuestionarioActual.preguntas.forEach((p, i) => {
         const card = document.createElement('div');
         card.className = 'question-card';
         card.innerHTML = `
@@ -293,7 +326,6 @@ function renderPreguntas() {
         `;
         container.appendChild(card);
     });
-
     actualizarProgreso();
 }
 
@@ -304,9 +336,8 @@ function registrarRespuesta(pregunta, opcion) {
 
 function actualizarProgreso() {
     const respondidas = respuestas.filter(r => r !== null).length;
-    const total = preguntasActuales.length;
-    const pct = (respondidas / total) * 100;
-    document.getElementById('progress-bar').style.width = pct + '%';
+    const total = cuestionarioActual.preguntas.length;
+    document.getElementById('progress-bar').style.width = (respondidas / total * 100) + '%';
     document.getElementById('question-counter').textContent =
         `${respondidas} de ${total} preguntas respondidas`;
 }
@@ -316,42 +347,39 @@ function enviarRespuestas() {
         alert('Por favor responde todas las preguntas antes de enviar.');
         return;
     }
-
-    // Calcular puntaje
     let correctas = 0;
     respuestas.forEach((r, i) => {
-        if (r === preguntasActuales[i].correcta) correctas++;
+        if (r === cuestionarioActual.preguntas[i].correcta) correctas++;
     });
+    const pct = Math.round((correctas / cuestionarioActual.preguntas.length) * 100);
 
-    // Mostrar resultado
     document.getElementById('quiz-section').style.display = 'none';
     document.getElementById('result-section').style.display = 'block';
     document.getElementById('score-number').textContent = correctas;
-    document.getElementById('score-total').textContent = preguntasActuales.length;
+    document.getElementById('score-total').textContent = cuestionarioActual.preguntas.length;
+    document.getElementById('quiz-title-result').textContent = cuestionarioActual.titulo;
+    document.getElementById('sheets-status').textContent = '';
+    document.getElementById('sending-msg').style.display = 'block';
 
-    const pct = Math.round((correctas / preguntasActuales.length) * 100);
-    let msg = '';
-    if (pct >= 80) msg = '🎉 ¡Excelente trabajo!';
-    else if (pct >= 60) msg = '👍 Buen esfuerzo, sigue practicando';
-    else msg = '💪 Continúa estudiando, tú puedes';
+    let msg = pct >= 80 ? '🎉 ¡Excelente trabajo!' :
+              pct >= 60 ? '👍 Buen esfuerzo, sigue practicando' :
+                          '💪 Continúa estudiando, tú puedes';
     document.getElementById('result-msg').textContent = msg;
 
-    // Enviar a Google Sheets
     enviarASheets(correctas, pct);
 }
 
 function enviarASheets(correctas, porcentaje) {
     const datos = {
         fecha: new Date().toLocaleString('es-MX'),
-        nombre: datosAlumno.nombre,
-        grado: datosAlumno.grado,
-        cuestionario: datosAlumno.cuestionario,
+        nombre: nombreAlumno,
+        grado: '-',
+        cuestionario: cuestionarioActual.titulo,
         correctas: correctas,
-        total: preguntasActuales.length,
+        total: cuestionarioActual.preguntas.length,
         porcentaje: porcentaje + '%',
         respuestas: respuestas.join(',')
     };
-
     fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -370,14 +398,8 @@ function enviarASheets(correctas, porcentaje) {
     });
 }
 
-function reiniciar() {
-    document.getElementById('result-section').style.display = 'none';
-    document.getElementById('start-section').style.display = 'block';
-    document.getElementById('nombre').value = '';
-    document.getElementById('grado').value = '';
-    document.getElementById('cuestionario').value = '';
-    document.getElementById('sending-msg').style.display = 'block';
-    document.getElementById('sheets-status').textContent = '';
+function volverCatalogo() {
+    mostrarCatalogo();
 }
 </script>
 </body>
