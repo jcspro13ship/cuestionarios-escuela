@@ -909,7 +909,7 @@ function renderResultados(data) {
 
     // Stats generales
     const totalIntentos    = data.length;
-    const estudiantesSet   = new Set(data.map(r => r['Cedula']));
+    const estudiantesSet = new Set(data.map(r => r['Cedula'] || r['Cédula'] || ''));
     const totalEstudiantes = estudiantesSet.size;
     const promedioGral     = Math.round(data.reduce((s,r) => s + parsePct(r['Porcentaje']), 0) / totalIntentos);
 
@@ -925,7 +925,7 @@ function renderResultados(data) {
     // Por estudiante (agrupado por cedula)
     const porEstudiante = {};
     data.forEach(r => {
-        const key = r['Cedula']||'?';
+        const key = r['Cedula'] || r['Cédula'] || '?';
         if (!porEstudiante[key]) porEstudiante[key] = { nombre: r['Nombre']||'', intentos: [] };
         porEstudiante[key].intentos.push(r);
     });
@@ -985,7 +985,8 @@ function filtrarTabla() {
         const e = estudiantes[ced];
         const matchNombre = !busqueda ||
             e.nombre.toLowerCase().includes(busqueda) ||
-            ced.toLowerCase().includes(busqueda);
+            ced.toLowerCase().includes(busqueda) ||
+            (r['Cédula']||'').toLowerCase().includes(busqueda);
         const matchQuiz = !quizFiltro ||
             e.intentos.some(i => i['Cuestionario'] === quizFiltro);
         return matchNombre && matchQuiz;
