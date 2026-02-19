@@ -3,593 +3,382 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Cuestionarios</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-    <div id="root"></div>
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+    <title>Cuestionarios Escuela</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 640px;
+            width: 100%;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+        }
+        h1 {
+            color: #1a237e;
+            margin-bottom: 8px;
+            font-size: 1.6rem;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 0.95rem;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #333;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3f51b5;
+        }
+        .btn {
+            background: #3f51b5;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #303f9f; }
+        .btn:disabled { background: #9fa8da; cursor: not-allowed; }
 
-        // Sistema de almacenamiento robusto
-        const storage = {
-            get(key) {
-                try {
-                    const value = localStorage.getItem(key);
-                    return value ? JSON.parse(value) : null;
-                } catch (e) {
-                    console.error('Error getting:', key, e);
-                    return null;
-                }
-            },
-            set(key, value) {
-                try {
-                    localStorage.setItem(key, JSON.stringify(value));
-                    return true;
-                } catch (e) {
-                    console.error('Error setting:', key, e);
-                    return false;
-                }
-            }
-        };
-
-        function App() {
-            const [view, setView] = useState('login');
-            const [user, setUser] = useState(null);
-            const [quizzes, setQuizzes] = useState([]);
-            const [students, setStudents] = useState([]);
-            const [results, setResults] = useState([]);
-            const [editing, setEditing] = useState(null);
-            const [quiz, setQuiz] = useState(null);
-            const [qIdx, setQIdx] = useState(0);
-            const [answers, setAnswers] = useState([]);
-            const [selected, setSelected] = useState(null);
-            const [showExp, setShowExp] = useState(false);
-            const [loading, setLoading] = useState(true);
-            const [pwd, setPwd] = useState('');
-
-            useEffect(() => {
-                const loadedQuizzes = storage.get('quizzes') || [];
-                const loadedStudents = storage.get('students') || [];
-                const loadedResults = storage.get('results') || [];
-                
-                setQuizzes(loadedQuizzes);
-                setStudents(loadedStudents);
-                setResults(loadedResults);
-                setLoading(false);
-            }, []);
-
-            const saveQuizzes = (newQuizzes) => {
-                setQuizzes(newQuizzes);
-                storage.set('quizzes', newQuizzes);
-            };
-
-            const saveStudents = (newStudents) => {
-                setStudents(newStudents);
-                storage.set('students', newStudents);
-            };
-
-            const saveResults = (newResults) => {
-                setResults(newResults);
-                storage.set('results', newResults);
-            };
-
-            const loginStudent = (name, id) => {
-                if (!name.trim() || !id.trim()) return alert('Completa todos los campos');
-                let st = students.find(s => s.id === id);
-                if (!st) {
-                    st = { id, name: name.trim(), createdAt: new Date().toISOString() };
-                    saveStudents([...students, st]);
-                }
-                setUser({ ...st, role: 'student' });
-                setView('student');
-            };
-
-            const loginAdmin = () => {
-                if (pwd === 'admin123') {
-                    setUser({ role: 'admin', name: 'Administrador' });
-                    setView('admin');
-                    setPwd('');
-                } else alert('Contraseña incorrecta');
-            };
-
-            const logout = () => { setUser(null); setView('login'); setPwd(''); };
-
-            const createQuiz = () => {
-                setEditing({ id: Date.now(), title: '', description: '', questions: [] });
-                setView('edit');
-            };
-
-            const addQ = () => {
-                setEditing({ ...editing, questions: [...editing.questions, { question: '', options: ['','','',''], correct: 0, explanation: '' }] });
-            };
-
-            const updateQ = (i, f, v) => {
-                const qs = [...editing.questions];
-                qs[i] = { ...qs[i], [f]: v };
-                setEditing({ ...editing, questions: qs });
-            };
-
-            const updateOpt = (qi, oi, v) => {
-                const qs = [...editing.questions];
-                qs[qi].options[oi] = v;
-                setEditing({ ...editing, questions: qs });
-            };
-
-            const delQ = (i) => {
-                setEditing({ ...editing, questions: editing.questions.filter((_, idx) => idx !== i) });
-            };
-
-            const saveQuiz = () => {
-                if (!editing.title || !editing.questions.length) return alert('Completa título y preguntas');
-                const idx = quizzes.findIndex(q => q.id === editing.id);
-                const newQs = idx >= 0 ? quizzes.map((q, i) => i === idx ? editing : q) : [...quizzes, editing];
-                saveQuizzes(newQs);
-                setEditing(null);
-                setView('admin');
-            };
-
-            const delQuiz = (id) => {
-                if (!confirm('¿Eliminar este cuestionario?')) return;
-                saveQuizzes(quizzes.filter(q => q.id !== id));
-            };
-
-            const startQuiz = (q) => {
-                setQuiz(q);
-                setQIdx(0);
-                setAnswers([]);
-                setSelected(null);
-                setShowExp(false);
-                setView('quiz');
-            };
-
-            const submitAns = () => {
-                if (selected === null) return alert('Selecciona una respuesta');
-                setAnswers([...answers, selected]);
-                setShowExp(true);
-            };
-
-            const nextQ = () => {
-                if (qIdx < quiz.questions.length - 1) {
-                    setQIdx(qIdx + 1);
-                    setSelected(null);
-                    setShowExp(false);
-                } else {
-                    let correct = 0;
-                    quiz.questions.forEach((q, i) => { if (answers[i] === q.correct) correct++; });
-                    const res = {
-                        id: Date.now(),
-                        studentId: user.id,
-                        studentName: user.name,
-                        quizId: quiz.id,
-                        quizTitle: quiz.title,
-                        score: correct,
-                        total: quiz.questions.length,
-                        percentage: Math.round((correct / quiz.questions.length) * 100),
-                        answers,
-                        date: new Date().toISOString()
-                    };
-                    saveResults([...results, res]);
-                    setView('results');
-                }
-            };
-
-            const exportCSV = () => {
-                const csv = [
-                    'Fecha,Estudiante,ID,Cuestionario,Puntuación,Total,Porcentaje',
-                    ...results.map(r => `"${new Date(r.date).toLocaleString('es')}","${r.studentName}","${r.studentId}","${r.quizTitle}",${r.score},${r.total},${r.percentage}%`)
-                ].join('\n');
-                const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = `resultados_${new Date().toISOString().split('T')[0]}.csv`;
-                a.click();
-            };
-
-            if (loading) return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="text-6xl mb-4">📚</div>
-                        <p className="text-xl">Cargando...</p>
-                    </div>
-                </div>
-            );
-
-            if (view === 'login') return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6 flex items-center justify-center">
-                    <div className="max-w-md w-full">
-                        <div className="text-center mb-8">
-                            <div className="text-7xl mb-4">📚</div>
-                            <h1 className="text-4xl font-bold text-gray-800 mb-2">Sistema de Cuestionarios</h1>
-                            <p className="text-gray-600">Inicia sesión para continuar</p>
-                        </div>
-                        <div className="bg-white p-8 rounded-2xl shadow-lg mb-4">
-                            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                                <span className="text-3xl">👤</span> Estudiante
-                            </h2>
-                            <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.target); loginStudent(fd.get('name'), fd.get('id')); }}>
-                                <input name="name" placeholder="Nombre completo" className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg mb-3 focus:border-blue-500 focus:outline-none" required />
-                                <input name="id" placeholder="ID de estudiante o cédula" className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg mb-4 focus:border-blue-500 focus:outline-none" required />
-                                <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition">Ingresar como Estudiante</button>
-                            </form>
-                        </div>
-                        <div className="bg-white p-8 rounded-2xl shadow-lg">
-                            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                                <span className="text-3xl">🔑</span> Administrador
-                            </h2>
-                            <form onSubmit={(e) => { e.preventDefault(); loginAdmin(); }}>
-                                <input type="password" placeholder="Contraseña de administrador" value={pwd} onChange={(e) => setPwd(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg mb-4 focus:border-purple-500 focus:outline-none" required />
-                                <button type="submit" className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold transition">Ingresar como Administrador</button>
-                            </form>
-                            <p className="text-sm text-gray-500 mt-3 text-center">Contacta al administrador para obtener la contraseña</p>
-                        </div>
-                    </div>
-                </div>
-            );
-
-            if (view === 'student') {
-                const myRes = results.filter(r => r.studentId === user.id);
-                return (
-                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-                        <div className="max-w-4xl mx-auto">
-                            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                                <div>
-                                    <h2 className="text-3xl font-bold text-gray-800">Bienvenido, {user.name}</h2>
-                                    <p className="text-gray-600">ID: {user.id}</p>
-                                </div>
-                                <button onClick={logout} className="px-6 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 font-semibold">Salir</button>
-                            </div>
-                            {myRes.length > 0 && (
-                                <div className="bg-white p-6 rounded-2xl shadow-lg mb-6">
-                                    <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Tu Progreso</h3>
-                                    <div className="grid grid-cols-3 gap-4 text-center">
-                                        <div className="p-4 bg-blue-50 rounded-xl">
-                                            <div className="text-4xl font-bold text-blue-600">{myRes.length}</div>
-                                            <div className="text-sm text-gray-600 mt-1">Intentos</div>
-                                        </div>
-                                        <div className="p-4 bg-green-50 rounded-xl">
-                                            <div className="text-4xl font-bold text-green-600">{Math.round(myRes.reduce((s,r) => s+r.percentage,0)/myRes.length)}%</div>
-                                            <div className="text-sm text-gray-600 mt-1">Promedio</div>
-                                        </div>
-                                        <div className="p-4 bg-purple-50 rounded-xl">
-                                            <div className="text-4xl font-bold text-purple-600">{Math.max(...myRes.map(r=>r.percentage))}%</div>
-                                            <div className="text-sm text-gray-600 mt-1">Mejor Nota</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                            <h3 className="text-2xl font-bold text-gray-800 mb-4">📝 Cuestionarios Disponibles</h3>
-                            {quizzes.length === 0 ? (
-                                <div className="text-center py-16 bg-white rounded-2xl shadow-lg">
-                                    <div className="text-6xl mb-4">📭</div>
-                                    <p className="text-gray-600 text-lg">No hay cuestionarios disponibles</p>
-                                    <p className="text-sm text-gray-500 mt-2">El administrador aún no ha creado cuestionarios</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {quizzes.map(q => {
-                                        const att = myRes.filter(r => r.quizId === q.id);
-                                        const best = att.length ? Math.max(...att.map(a=>a.percentage)) : null;
-                                        return (
-                                            <div key={q.id} className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition">
-                                                <div className="flex justify-between items-start mb-4 flex-wrap gap-4">
-                                                    <div className="flex-1">
-                                                        <h3 className="text-2xl font-bold text-gray-800 mb-2">{q.title}</h3>
-                                                        <p className="text-gray-600 mb-2">{q.description}</p>
-                                                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">{q.questions.length} preguntas</span>
-                                                    </div>
-                                                    {best !== null && (
-                                                        <div className="text-right bg-green-50 px-6 py-3 rounded-xl">
-                                                            <div className="text-3xl font-bold text-green-600">{best}%</div>
-                                                            <div className="text-xs text-gray-600">Mejor nota</div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <button onClick={() => startQuiz(q)} className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg">
-                                                    {att.length ? '🔄 Reintentar' : '▶️ Comenzar'}
-                                                </button>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                );
-            }
-
-            if (view === 'admin') {
-                return (
-                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-                        <div className="max-w-6xl mx-auto">
-                            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                                <h2 className="text-4xl font-bold text-gray-800">🎛️ Panel de Administración</h2>
-                                <div className="flex gap-2 flex-wrap">
-                                    <button onClick={() => setView('stats')} className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-semibold">📊 Estadísticas</button>
-                                    <button onClick={createQuiz} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">➕ Nuevo Cuestionario</button>
-                                    <button onClick={logout} className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 font-semibold">Salir</button>
-                                </div>
-                            </div>
-                            <div className="grid md:grid-cols-3 gap-4 mb-6">
-                                <div className="bg-white p-6 rounded-2xl shadow-lg">
-                                    <div className="text-5xl font-bold text-blue-600 mb-2">{students.length}</div>
-                                    <div className="text-gray-600">Estudiantes Registrados</div>
-                                </div>
-                                <div className="bg-white p-6 rounded-2xl shadow-lg">
-                                    <div className="text-5xl font-bold text-green-600 mb-2">{results.length}</div>
-                                    <div className="text-gray-600">Intentos Totales</div>
-                                </div>
-                                <div className="bg-white p-6 rounded-2xl shadow-lg">
-                                    <div className="text-5xl font-bold text-purple-600 mb-2">{results.length ? Math.round(results.reduce((s,r)=>s+r.percentage,0)/results.length) : 0}%</div>
-                                    <div className="text-gray-600">Promedio General</div>
-                                </div>
-                            </div>
-                            <h3 className="text-2xl font-bold text-gray-800 mb-4">📚 Cuestionarios ({quizzes.length})</h3>
-                            {quizzes.length === 0 ? (
-                                <div className="text-center py-16 bg-white rounded-2xl shadow-lg">
-                                    <div className="text-6xl mb-4">📭</div>
-                                    <p className="text-gray-600 text-lg mb-4">No hay cuestionarios creados</p>
-                                    <button onClick={createQuiz} className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">Crear Primer Cuestionario</button>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {quizzes.map(q => {
-                                        const qRes = results.filter(r => r.quizId === q.id);
-                                        const avg = qRes.length ? Math.round(qRes.reduce((s,r)=>s+r.percentage,0)/qRes.length) : 0;
-                                        return (
-                                            <div key={q.id} className="bg-white p-6 rounded-2xl shadow-lg">
-                                                <div className="flex justify-between items-start flex-wrap gap-4">
-                                                    <div className="flex-1">
-                                                        <h3 className="text-2xl font-bold text-gray-800 mb-2">{q.title}</h3>
-                                                        <p className="text-gray-600 mb-3">{q.description}</p>
-                                                        <div className="flex gap-3 flex-wrap">
-                                                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">{q.questions.length} preguntas</span>
-                                                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">{qRes.length} intentos</span>
-                                                            {qRes.length > 0 && <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">Promedio: {avg}%</span>}
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <button onClick={() => { setEditing(q); setView('edit'); }} className="px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 font-semibold">✏️ Editar</button>
-                                                        <button onClick={() => delQuiz(q.id)} className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 font-semibold">🗑️</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                );
-            }
-
-            if (view === 'stats') {
-                return (
-                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-                        <div className="max-w-6xl mx-auto">
-                            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                                <h2 className="text-4xl font-bold text-gray-800">📊 Estadísticas y Resultados</h2>
-                                <div className="flex gap-2">
-                                    <button onClick={exportCSV} disabled={!results.length} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 font-semibold">⬇️ Exportar CSV</button>
-                                    <button onClick={() => setView('admin')} className="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 font-semibold">Volver</button>
-                                </div>
-                            </div>
-                            <div className="bg-white p-6 rounded-2xl shadow-lg mb-6">
-                                <h3 className="text-2xl font-bold text-gray-800 mb-4">📈 Por Cuestionario</h3>
-                                {quizzes.length === 0 ? (
-                                    <p className="text-center text-gray-500 py-8">No hay cuestionarios</p>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {quizzes.map(q => {
-                                            const qRes = results.filter(r => r.quizId === q.id);
-                                            const avg = qRes.length ? Math.round(qRes.reduce((s,r)=>s+r.percentage,0)/qRes.length) : 0;
-                                            return (
-                                                <div key={q.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
-                                                    <div className="flex-1">
-                                                        <div className="font-bold text-lg text-gray-800">{q.title}</div>
-                                                        <div className="text-sm text-gray-600">{qRes.length} intentos</div>
-                                                    </div>
-                                                    <div className="text-right bg-blue-100 px-6 py-3 rounded-lg">
-                                                        <div className="text-3xl font-bold text-blue-600">{avg}%</div>
-                                                        <div className="text-xs text-gray-600">Promedio</div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="bg-white p-6 rounded-2xl shadow-lg">
-                                <h3 className="text-2xl font-bold text-gray-800 mb-4">📋 Últimos 20 Resultados</h3>
-                                {results.length === 0 ? (
-                                    <p className="text-center text-gray-500 py-8">No hay resultados todavía</p>
-                                ) : (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead className="bg-gray-100">
-                                                <tr>
-                                                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Fecha</th>
-                                                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Estudiante</th>
-                                                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Cuestionario</th>
-                                                    <th className="px-4 py-3 text-center font-semibold text-gray-700">Puntuación</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200">
-                                                {results.slice().reverse().slice(0,20).map(r => (
-                                                    <tr key={r.id} className="hover:bg-gray-50">
-                                                        <td className="px-4 py-3 text-sm text-gray-600">{new Date(r.date).toLocaleString('es-ES')}</td>
-                                                        <td className="px-4 py-3">
-                                                            <div className="font-semibold text-gray-800">{r.studentName}</div>
-                                                            <div className="text-xs text-gray-500">ID: {r.studentId}</div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-sm text-gray-800">{r.quizTitle}</td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <span className={`inline-block px-4 py-2 rounded-full text-sm font-bold ${
-                                                                r.percentage >= 70 ? 'bg-green-100 text-green-700' :
-                                                                r.percentage >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                                                                'bg-red-100 text-red-700'
-                                                            }`}>
-                                                                {r.score}/{r.total} ({r.percentage}%)
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            if (view === 'edit') {
-                return (
-                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-                        <div className="max-w-4xl mx-auto">
-                            <h2 className="text-4xl font-bold text-gray-800 mb-6">{editing.title ? '✏️ Editar' : '➕ Nuevo'} Cuestionario</h2>
-                            <div className="bg-white p-6 rounded-2xl shadow-lg mb-6">
-                                <input placeholder="Título del cuestionario" value={editing.title} onChange={(e) => setEditing({...editing, title: e.target.value})} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg mb-4 text-xl font-bold focus:border-blue-500 focus:outline-none" />
-                                <textarea placeholder="Descripción" value={editing.description} onChange={(e) => setEditing({...editing, description: e.target.value})} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none" rows="3" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-gray-800 mb-4">❓ Preguntas</h3>
-                            {editing.questions.map((q, i) => (
-                                <div key={i} className="bg-white p-6 rounded-2xl shadow-lg mb-4">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <span className="text-lg font-bold text-gray-700">Pregunta {i+1}</span>
-                                        <button onClick={() => delQ(i)} className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 font-semibold">🗑️ Eliminar</button>
-                                    </div>
-                                    <input placeholder="Escribe tu pregunta" value={q.question} onChange={(e) => updateQ(i, 'question', e.target.value)} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg mb-4 font-semibold focus:border-blue-500 focus:outline-none" />
-                                    <div className="space-y-2 mb-4">
-                                        <p className="text-sm text-gray-600 mb-2 font-semibold">Marca el círculo de la respuesta correcta:</p>
-                                        {q.options.map((opt, oi) => (
-                                            <div key={oi} className="flex gap-2 items-center">
-                                                <input type="radio" name={`correct-${i}`} checked={q.correct === oi} onChange={() => updateQ(i, 'correct', oi)} className="w-5 h-5 cursor-pointer" />
-                                                <input placeholder={`Opción ${oi+1}`} value={opt} onChange={(e) => updateOpt(i, oi, e.target.value)} className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none" />
-                                                {q.correct === oi && <span className="text-green-600 font-bold text-sm whitespace-nowrap">✓ Correcta</span>}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <textarea placeholder="Explicación de la respuesta correcta" value={q.explanation} onChange={(e) => updateQ(i, 'explanation', e.target.value)} className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none" rows="2" />
-                                </div>
-                            ))}
-                            <button onClick={addQ} className="w-full py-3 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 mb-4 font-semibold text-lg">➕ Agregar Pregunta</button>
-                            <div className="flex gap-4">
-                                <button onClick={saveQuiz} className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-lg">💾 Guardar Cuestionario</button>
-                                <button onClick={() => { setEditing(null); setView('admin'); }} className="px-6 py-3 bg-gray-200 rounded-lg hover:bg-gray-300 font-semibold">Cancelar</button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            if (view === 'quiz') {
-                const q = quiz.questions[qIdx];
-                return (
-                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-                        <div className="max-w-3xl mx-auto">
-                            <div className="mb-6">
-                                <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
-                                    <h2 className="text-2xl font-bold text-gray-800">{quiz.title}</h2>
-                                    <span className="text-gray-600">Pregunta {qIdx+1} de {quiz.questions.length}</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div className="bg-blue-600 h-2 rounded-full transition-all" style={{width: `${((qIdx+1)/quiz.questions.length)*100}%`}} />
-                                </div>
-                            </div>
-                            <div className="bg-white p-8 rounded-2xl shadow-lg">
-                                <h3 className="text-2xl font-semibold text-gray-800 mb-6">{q.question}</h3>
-                                <div className="space-y-3 mb-6">
-                                    {q.options.map((opt, i) => {
-                                        let bg = 'bg-gray-50 hover:bg-gray-100';
-                                        let border = 'border-gray-300';
-                                        if (showExp) {
-                                            if (i === q.correct) { bg = 'bg-green-100'; border = 'border-green-500'; }
-                                            else if (i === selected && selected !== q.correct) { bg = 'bg-red-100'; border = 'border-red-500'; }
-                                        } else if (selected === i) { bg = 'bg-blue-100'; border = 'border-blue-500'; }
-                                        return (
-                                            <button key={i} onClick={() => !showExp && setSelected(i)} disabled={showExp} className={`w-full p-4 ${bg} border-2 ${border} rounded-lg text-left transition-all text-lg`}>
-                                                {opt}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                                {showExp && (
-                                    <div className={`p-4 rounded-lg mb-6 ${selected === q.correct ? 'bg-green-50 border-2 border-green-200' : 'bg-blue-50 border-2 border-blue-200'}`}>
-                                        <h4 className="font-bold text-lg mb-2">{selected === q.correct ? '✅ ¡Correcto!' : '❌ Respuesta incorrecta'}</h4>
-                                        <p className="text-gray-700">{q.explanation}</p>
-                                    </div>
-                                )}
-                                <div className="flex justify-end">
-                                    {!showExp ? (
-                                        <button onClick={submitAns} className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg">Enviar Respuesta</button>
-                                    ) : (
-                                        <button onClick={nextQ} className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg">
-                                            {qIdx < quiz.questions.length - 1 ? 'Siguiente Pregunta ➡️' : 'Ver Resultados 🎯'}
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            if (view === 'results') {
-                let correct = 0;
-                quiz.questions.forEach((q, i) => { if (answers[i] === q.correct) correct++; });
-                const pct = Math.round((correct / quiz.questions.length) * 100);
-                return (
-                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-                        <div className="max-w-3xl mx-auto">
-                            <div className="bg-white p-8 rounded-2xl shadow-lg text-center">
-                                <div className="text-8xl mb-6">{pct >= 70 ? '🏆' : pct >= 50 ? '👍' : '📚'}</div>
-                                <h2 className="text-4xl font-bold text-gray-800 mb-4">¡Cuestionario Completado!</h2>
-                                <div className="mb-8">
-                                    <div className={`text-7xl font-bold mb-2 ${pct >= 70 ? 'text-green-600' : pct >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>{pct}%</div>
-                                    <p className="text-xl text-gray-600">{correct} de {quiz.questions.length} respuestas correctas</p>
-                                </div>
-                                <div className="space-y-4 mb-8">
-                                    {quiz.questions.map((q, i) => {
-                                        const isCorrect = answers[i] === q.correct;
-                                        return (
-                                            <div key={i} className={`p-4 rounded-xl border-2 ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                                                <div className="flex items-start gap-3">
-                                                    <div className="text-2xl">{isCorrect ? '✅' : '❌'}</div>
-                                                    <div className="text-left flex-1">
-                                                        <p className="font-semibold text-gray-800 mb-1">{q.question}</p>
-                                                        <p className="text-sm text-gray-600">
-                                                            Tu respuesta: <span className={isCorrect ? 'text-green-700 font-semibold' : 'text-red-700 font-semibold'}>{q.options[answers[i]]}</span>
-                                                        </p>
-                                                        {!isCorrect && (
-                                                            <p className="text-sm text-gray-600">
-                                                                Correcta: <span className="text-green-700 font-semibold">{q.options[q.correct]}</span>
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                <div className="flex gap-4">
-                                    <button onClick={() => setView('student')} className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg">Volver a Cuestionarios</button>
-                                    <button onClick={() => startQuiz(quiz)} className="flex-1 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-lg">🔄 Reintentar</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            return null;
+        /* Cuestionario */
+        #quiz-section { display: none; }
+        .question-card {
+            background: #f8f9ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-left: 4px solid #3f51b5;
+        }
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #222;
+        }
+        .options label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 400;
+            margin-bottom: 4px;
+            transition: background 0.15s;
+        }
+        .options label:hover { background: #e8eaf6; }
+        .options input[type="radio"] {
+            width: auto;
+            accent-color: #3f51b5;
+        }
+        .progress {
+            background: #e0e0e0;
+            border-radius: 8px;
+            height: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background: #3f51b5;
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.4s;
+        }
+        .question-counter {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
         }
 
-        ReactDOM.render(<App />, document.getElementById('root'));
-    </script>
+        /* Resultado */
+        #result-section { display: none; text-align: center; }
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #3f51b5;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        .score-circle span { font-size: 0.85rem; font-weight: 400; }
+        .result-msg { color: #444; margin-bottom: 20px; font-size: 1.05rem; }
+        .sending-msg { color: #3f51b5; font-style: italic; margin-bottom: 10px; }
+        .success-msg { color: #2e7d32; font-weight: 600; }
+        .error-msg { color: #c62828; font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Sección de inicio -->
+    <div id="start-section">
+        <h1>📚 Cuestionarios Escuela</h1>
+        <p class="subtitle">Completa tus datos para comenzar</p>
+
+        <div class="form-group">
+            <label>Nombre completo</label>
+            <input type="text" id="nombre" placeholder="Ej: María García López">
+        </div>
+        <div class="form-group">
+            <label>Grado</label>
+            <select id="grado">
+                <option value="">-- Selecciona --</option>
+                <option>1° Primaria</option>
+                <option>2° Primaria</option>
+                <option>3° Primaria</option>
+                <option>4° Primaria</option>
+                <option>5° Primaria</option>
+                <option>6° Primaria</option>
+                <option>1° Secundaria</option>
+                <option>2° Secundaria</option>
+                <option>3° Secundaria</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Cuestionario</label>
+            <select id="cuestionario">
+                <option value="">-- Selecciona --</option>
+                <option value="matematicas">Matemáticas</option>
+                <option value="ciencias">Ciencias Naturales</option>
+                <option value="español">Español</option>
+                <option value="historia">Historia</option>
+            </select>
+        </div>
+
+        <button class="btn" onclick="iniciarCuestionario()">Comenzar →</button>
+    </div>
+
+    <!-- Sección del cuestionario -->
+    <div id="quiz-section">
+        <h1 id="quiz-title">Cuestionario</h1>
+        <p class="subtitle" id="quiz-alumno"></p>
+        <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+        <p class="question-counter" id="question-counter"></p>
+        <div id="questions-container"></div>
+        <button class="btn" id="btn-enviar" onclick="enviarRespuestas()">Enviar respuestas</button>
+    </div>
+
+    <!-- Sección de resultado -->
+    <div id="result-section">
+        <div class="score-circle">
+            <div id="score-number">0</div>
+            <span>de <span id="score-total">0</span></span>
+        </div>
+        <p class="result-msg" id="result-msg"></p>
+        <p class="sending-msg" id="sending-msg">Guardando resultados...</p>
+        <p id="sheets-status"></p>
+        <button class="btn" onclick="reiniciar()" style="margin-top:20px">Hacer otro cuestionario</button>
+    </div>
+
+</div>
+
+<script>
+// ============================================================
+// ⚙️ CONFIGURACIÓN - Solo cambia esta URL
+// ============================================================
+const GOOGLE_SCRIPT_URL = 'TU_URL_DE_GOOGLE_APPS_SCRIPT_AQUI';
+// ============================================================
+
+// Base de preguntas por cuestionario
+const PREGUNTAS = {
+    matematicas: [
+        { pregunta: "¿Cuánto es 7 × 8?", opciones: ["54", "56", "64", "48"], correcta: 1 },
+        { pregunta: "¿Qué fracción es mayor?", opciones: ["1/2", "1/3", "1/4", "1/5"], correcta: 0 },
+        { pregunta: "¿Cuánto es 144 ÷ 12?", opciones: ["11", "13", "12", "14"], correcta: 2 },
+        { pregunta: "¿Cuál es el área de un cuadrado de lado 5?", opciones: ["10", "20", "25", "15"], correcta: 2 },
+        { pregunta: "¿Cuánto es 15% de 200?", opciones: ["25", "30", "35", "20"], correcta: 1 },
+    ],
+    ciencias: [
+        { pregunta: "¿Cuál es el planeta más grande del sistema solar?", opciones: ["Saturno", "Júpiter", "Neptuno", "Urano"], correcta: 1 },
+        { pregunta: "¿Qué proceso usan las plantas para hacer su alimento?", opciones: ["Respiración", "Digestión", "Fotosíntesis", "Osmosis"], correcta: 2 },
+        { pregunta: "¿Cuántos huesos tiene el cuerpo humano adulto?", opciones: ["106", "206", "306", "156"], correcta: 1 },
+        { pregunta: "¿Qué órgano bombea la sangre?", opciones: ["Pulmón", "Hígado", "Riñón", "Corazón"], correcta: 3 },
+        { pregunta: "¿Cuál es la fórmula química del agua?", opciones: ["CO2", "H2O", "O2", "NaCl"], correcta: 1 },
+    ],
+    español: [
+        { pregunta: "¿Cuál es el sujeto en: 'Los niños juegan en el parque'?", opciones: ["juegan", "parque", "Los niños", "en el parque"], correcta: 2 },
+        { pregunta: "¿Qué tipo de palabra es 'rápidamente'?", opciones: ["Sustantivo", "Adjetivo", "Adverbio", "Verbo"], correcta: 2 },
+        { pregunta: "¿Cuál palabra está bien escrita?", opciones: ["Havía", "Había", "Abia", "Habia"], correcta: 1 },
+        { pregunta: "¿Qué signo va al inicio de una pregunta en español?", opciones: ["?", "¿", "¡", "!"], correcta: 1 },
+        { pregunta: "Un sinónimo de 'feliz' es:", opciones: ["Triste", "Enojado", "Contento", "Asustado"], correcta: 2 },
+    ],
+    historia: [
+        { pregunta: "¿En qué año llegó Colón a América?", opciones: ["1392", "1492", "1592", "1292"], correcta: 1 },
+        { pregunta: "¿Quién fue el primer presidente de México?", opciones: ["Benito Juárez", "Guadalupe Victoria", "Porfirio Díaz", "Miguel Hidalgo"], correcta: 1 },
+        { pregunta: "¿Cuándo fue la Revolución Francesa?", opciones: ["1689", "1776", "1789", "1799"], correcta: 2 },
+        { pregunta: "¿Qué civilización construyó las pirámides de Egipto?", opciones: ["Griegos", "Romanos", "Egipcios", "Persas"], correcta: 2 },
+        { pregunta: "¿Quién escribió 'El Quijote'?", opciones: ["Lope de Vega", "Cervantes", "Quevedo", "Góngora"], correcta: 1 },
+    ]
+};
+
+let datosAlumno = {};
+let preguntasActuales = [];
+let respuestas = [];
+
+function iniciarCuestionario() {
+    const nombre = document.getElementById('nombre').value.trim();
+    const grado = document.getElementById('grado').value;
+    const cuestionario = document.getElementById('cuestionario').value;
+
+    if (!nombre || !grado || !cuestionario) {
+        alert('Por favor completa todos los campos');
+        return;
+    }
+
+    datosAlumno = { nombre, grado, cuestionario };
+    preguntasActuales = PREGUNTAS[cuestionario];
+    respuestas = new Array(preguntasActuales.length).fill(null);
+
+    document.getElementById('quiz-title').textContent =
+        document.getElementById('cuestionario').options[document.getElementById('cuestionario').selectedIndex].text;
+    document.getElementById('quiz-alumno').textContent = `Alumno: ${nombre} | ${grado}`;
+
+    renderPreguntas();
+
+    document.getElementById('start-section').style.display = 'none';
+    document.getElementById('quiz-section').style.display = 'block';
+}
+
+function renderPreguntas() {
+    const container = document.getElementById('questions-container');
+    container.innerHTML = '';
+
+    preguntasActuales.forEach((p, i) => {
+        const card = document.createElement('div');
+        card.className = 'question-card';
+        card.innerHTML = `
+            <p class="question-text">${i + 1}. ${p.pregunta}</p>
+            <div class="options">
+                ${p.opciones.map((op, j) => `
+                    <label>
+                        <input type="radio" name="q${i}" value="${j}" onchange="registrarRespuesta(${i}, ${j})">
+                        ${op}
+                    </label>
+                `).join('')}
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    actualizarProgreso();
+}
+
+function registrarRespuesta(pregunta, opcion) {
+    respuestas[pregunta] = opcion;
+    actualizarProgreso();
+}
+
+function actualizarProgreso() {
+    const respondidas = respuestas.filter(r => r !== null).length;
+    const total = preguntasActuales.length;
+    const pct = (respondidas / total) * 100;
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('question-counter').textContent =
+        `${respondidas} de ${total} preguntas respondidas`;
+}
+
+function enviarRespuestas() {
+    if (respuestas.includes(null)) {
+        alert('Por favor responde todas las preguntas antes de enviar.');
+        return;
+    }
+
+    // Calcular puntaje
+    let correctas = 0;
+    respuestas.forEach((r, i) => {
+        if (r === preguntasActuales[i].correcta) correctas++;
+    });
+
+    // Mostrar resultado
+    document.getElementById('quiz-section').style.display = 'none';
+    document.getElementById('result-section').style.display = 'block';
+    document.getElementById('score-number').textContent = correctas;
+    document.getElementById('score-total').textContent = preguntasActuales.length;
+
+    const pct = Math.round((correctas / preguntasActuales.length) * 100);
+    let msg = '';
+    if (pct >= 80) msg = '🎉 ¡Excelente trabajo!';
+    else if (pct >= 60) msg = '👍 Buen esfuerzo, sigue practicando';
+    else msg = '💪 Continúa estudiando, tú puedes';
+    document.getElementById('result-msg').textContent = msg;
+
+    // Enviar a Google Sheets
+    enviarASheets(correctas, pct);
+}
+
+function enviarASheets(correctas, porcentaje) {
+    const datos = {
+        fecha: new Date().toLocaleString('es-MX'),
+        nombre: datosAlumno.nombre,
+        grado: datosAlumno.grado,
+        cuestionario: datosAlumno.cuestionario,
+        correctas: correctas,
+        total: preguntasActuales.length,
+        porcentaje: porcentaje + '%',
+        respuestas: respuestas.join(',')
+    };
+
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+    })
+    .then(() => {
+        document.getElementById('sending-msg').style.display = 'none';
+        document.getElementById('sheets-status').innerHTML =
+            '<span class="success-msg">✅ Resultado guardado correctamente</span>';
+    })
+    .catch(() => {
+        document.getElementById('sending-msg').style.display = 'none';
+        document.getElementById('sheets-status').innerHTML =
+            '<span class="error-msg">⚠️ No se pudo guardar. Revisa la conexión.</span>';
+    });
+}
+
+function reiniciar() {
+    document.getElementById('result-section').style.display = 'none';
+    document.getElementById('start-section').style.display = 'block';
+    document.getElementById('nombre').value = '';
+    document.getElementById('grado').value = '';
+    document.getElementById('cuestionario').value = '';
+    document.getElementById('sending-msg').style.display = 'block';
+    document.getElementById('sheets-status').textContent = '';
+}
+</script>
 </body>
 </html>
