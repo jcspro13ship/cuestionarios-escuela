@@ -872,14 +872,32 @@ function guardarEdicion() {
 function cargarResultados() {
     const cont = document.getElementById('resultados-contenido');
     cont.innerHTML = '<div class="loading-msg">⏳ Cargando datos desde Google Sheets...</div>';
-    fetch(GOOGLE_SCRIPT_URL)
-        .then(r => r.json())
-        .then(data => renderResultados(data))
-        .catch(() => {
-            cont.innerHTML = `<div style="background:#fff3e0;border-radius:10px;padding:16px;color:#bf360c;font-size:0.88rem;line-height:1.6">
+
+    fetch(GOOGLE_SCRIPT_URL + '?action=get', {
+        method: 'GET',
+        redirect: 'follow'
+    })
+    .then(r => {
+        if (!r.ok) throw new Error('Error HTTP: ' + r.status);
+        return r.text();
+    })
+    .then(texto => {
+        // Limpiar respuesta por si Google agrega algo extra
+        const limpio = texto.trim().replace(/^[^[{]*/, '').replace(/[^}\]]*$/, '');
+        const data   = JSON.parse(limpio);
+        renderResultados(data);
+    })
+    .catch(err => {
+        cont.innerHTML = `
+            <div style="background:#fff3e0;border-radius:10px;padding:16px;color:#bf360c;font-size:0.88rem;line-height:1.8">
                 ⚠️ No se pudieron cargar los resultados.<br>
-                Verifica que la URL del script esté configurada y que permita acceso público en modo GET.</div>`;
-        });
+                <strong>Error:</strong> ${err.message}<br><br>
+                <strong>Verifica:</strong><br>
+                • La URL del script está correctamente pegada<br>
+                • El acceso es "Cualquier usuario"<br>
+                • Republicaste como nueva versión tras el último cambio
+            </div>`;
+    });
 }
 
 function renderResultados(data) {
