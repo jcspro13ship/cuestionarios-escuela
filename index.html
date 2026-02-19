@@ -14,20 +14,27 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        if (typeof window.storage === 'undefined') {
-            window.storage = {
-                async get(key, shared) {
-                    const k = (shared ? 's_' : 'l_') + key;
-                    const v = localStorage.getItem(k);
-                    if (v) return { key, value: v, shared };
-                    throw new Error('Not found');
-                },
-                async set(key, value, shared) {
-                    localStorage.setItem((shared ? 's_' : 'l_') + key, value);
-                    return { key, value, shared };
+        // Sistema de almacenamiento robusto
+        const storage = {
+            get(key) {
+                try {
+                    const value = localStorage.getItem(key);
+                    return value ? JSON.parse(value) : null;
+                } catch (e) {
+                    console.error('Error getting:', key, e);
+                    return null;
                 }
-            };
-        }
+            },
+            set(key, value) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(value));
+                    return true;
+                } catch (e) {
+                    console.error('Error setting:', key, e);
+                    return false;
+                }
+            }
+        };
 
         function App() {
             const [view, setView] = useState('login');
@@ -45,31 +52,37 @@
             const [pwd, setPwd] = useState('');
 
             useEffect(() => {
-                (async () => {
-                    try {
-                        const q = await window.storage.get('quizzes', true);
-                        if (q) setQuizzes(JSON.parse(q.value));
-                        const s = await window.storage.get('students', true);
-                        if (s) setStudents(JSON.parse(s.value));
-                        const r = await window.storage.get('results', true);
-                        if (r) setResults(JSON.parse(r.value));
-                    } catch (e) {}
-                    setLoading(false);
-                })();
+                const loadedQuizzes = storage.get('quizzes') || [];
+                const loadedStudents = storage.get('students') || [];
+                const loadedResults = storage.get('results') || [];
+                
+                setQuizzes(loadedQuizzes);
+                setStudents(loadedStudents);
+                setResults(loadedResults);
+                setLoading(false);
             }, []);
 
-            const save = async (key, data) => {
-                await window.storage.set(key, JSON.stringify(data), true);
+            const saveQuizzes = (newQuizzes) => {
+                setQuizzes(newQuizzes);
+                storage.set('quizzes', newQuizzes);
             };
 
-            const loginStudent = async (name, id) => {
+            const saveStudents = (newStudents) => {
+                setStudents(newStudents);
+                storage.set('students', newStudents);
+            };
+
+            const saveResults = (newResults) => {
+                setResults(newResults);
+                storage.set('results', newResults);
+            };
+
+            const loginStudent = (name, id) => {
                 if (!name.trim() || !id.trim()) return alert('Completa todos los campos');
                 let st = students.find(s => s.id === id);
                 if (!st) {
                     st = { id, name: name.trim(), createdAt: new Date().toISOString() };
-                    const newS = [...students, st];
-                    setStudents(newS);
-                    await save('students', newS);
+                    saveStudents([...students, st]);
                 }
                 setUser({ ...st, role: 'student' });
                 setView('student');
@@ -110,21 +123,18 @@
                 setEditing({ ...editing, questions: editing.questions.filter((_, idx) => idx !== i) });
             };
 
-            const saveQuiz = async () => {
+            const saveQuiz = () => {
                 if (!editing.title || !editing.questions.length) return alert('Completa título y preguntas');
                 const idx = quizzes.findIndex(q => q.id === editing.id);
                 const newQs = idx >= 0 ? quizzes.map((q, i) => i === idx ? editing : q) : [...quizzes, editing];
-                setQuizzes(newQs);
-                await save('quizzes', newQs);
+                saveQuizzes(newQs);
                 setEditing(null);
                 setView('admin');
             };
 
-            const delQuiz = async (id) => {
+            const delQuiz = (id) => {
                 if (!confirm('¿Eliminar este cuestionario?')) return;
-                const newQs = quizzes.filter(q => q.id !== id);
-                setQuizzes(newQs);
-                await save('quizzes', newQs);
+                saveQuizzes(quizzes.filter(q => q.id !== id));
             };
 
             const startQuiz = (q) => {
@@ -142,7 +152,7 @@
                 setShowExp(true);
             };
 
-            const nextQ = async () => {
+            const nextQ = () => {
                 if (qIdx < quiz.questions.length - 1) {
                     setQIdx(qIdx + 1);
                     setSelected(null);
@@ -162,9 +172,7 @@
                         answers,
                         date: new Date().toISOString()
                     };
-                    const newR = [...results, res];
-                    setResults(newR);
-                    await save('results', newR);
+                    saveResults([...results, res]);
                     setView('results');
                 }
             };
@@ -184,7 +192,7 @@
             if (loading) return (
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
                     <div className="text-center">
-                        <img src="logo.png" alt="Logo" className="w-24 h-24 mx-auto mb-4 object-contain" />
+                        <div className="text-6xl mb-4">📚</div>
                         <p className="text-xl">Cargando...</p>
                     </div>
                 </div>
@@ -194,7 +202,7 @@
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6 flex items-center justify-center">
                     <div className="max-w-md w-full">
                         <div className="text-center mb-8">
-                            <img src="logo.png" alt="Logo Empresa" className="w-32 h-32 mx-auto mb-4 object-contain" />
+                            <div className="text-7xl mb-4">📚</div>
                             <h1 className="text-4xl font-bold text-gray-800 mb-2">Sistema de Cuestionarios</h1>
                             <p className="text-gray-600">Inicia sesión para continuar</p>
                         </div>
@@ -228,12 +236,9 @@
                     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
                         <div className="max-w-4xl mx-auto">
                             <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                                <div className="flex items-center gap-4">
-                                    <img src="logo.png" alt="Logo" className="w-16 h-16 object-contain" />
-                                    <div>
-                                        <h2 className="text-3xl font-bold text-gray-800">Bienvenido, {user.name}</h2>
-                                        <p className="text-gray-600">ID: {user.id}</p>
-                                    </div>
+                                <div>
+                                    <h2 className="text-3xl font-bold text-gray-800">Bienvenido, {user.name}</h2>
+                                    <p className="text-gray-600">ID: {user.id}</p>
                                 </div>
                                 <button onClick={logout} className="px-6 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 font-semibold">Salir</button>
                             </div>
@@ -261,6 +266,7 @@
                                 <div className="text-center py-16 bg-white rounded-2xl shadow-lg">
                                     <div className="text-6xl mb-4">📭</div>
                                     <p className="text-gray-600 text-lg">No hay cuestionarios disponibles</p>
+                                    <p className="text-sm text-gray-500 mt-2">El administrador aún no ha creado cuestionarios</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -300,10 +306,7 @@
                     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
                         <div className="max-w-6xl mx-auto">
                             <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                                <div className="flex items-center gap-4">
-                                    <img src="logo.png" alt="Logo" className="w-16 h-16 object-contain" />
-                                    <h2 className="text-4xl font-bold text-gray-800">Panel de Administración</h2>
-                                </div>
+                                <h2 className="text-4xl font-bold text-gray-800">🎛️ Panel de Administración</h2>
                                 <div className="flex gap-2 flex-wrap">
                                     <button onClick={() => setView('stats')} className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-semibold">📊 Estadísticas</button>
                                     <button onClick={createQuiz} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">➕ Nuevo Cuestionario</button>
@@ -324,7 +327,7 @@
                                     <div className="text-gray-600">Promedio General</div>
                                 </div>
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-800 mb-4">📚 Cuestionarios</h3>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-4">📚 Cuestionarios ({quizzes.length})</h3>
                             {quizzes.length === 0 ? (
                                 <div className="text-center py-16 bg-white rounded-2xl shadow-lg">
                                     <div className="text-6xl mb-4">📭</div>
@@ -368,10 +371,7 @@
                     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
                         <div className="max-w-6xl mx-auto">
                             <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                                <div className="flex items-center gap-4">
-                                    <img src="logo.png" alt="Logo" className="w-16 h-16 object-contain" />
-                                    <h2 className="text-4xl font-bold text-gray-800">Estadísticas y Resultados</h2>
-                                </div>
+                                <h2 className="text-4xl font-bold text-gray-800">📊 Estadísticas y Resultados</h2>
                                 <div className="flex gap-2">
                                     <button onClick={exportCSV} disabled={!results.length} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 font-semibold">⬇️ Exportar CSV</button>
                                     <button onClick={() => setView('admin')} className="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 font-semibold">Volver</button>
@@ -451,10 +451,7 @@
                 return (
                     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
                         <div className="max-w-4xl mx-auto">
-                            <div className="flex items-center gap-4 mb-6">
-                                <img src="logo.png" alt="Logo" className="w-16 h-16 object-contain" />
-                                <h2 className="text-4xl font-bold text-gray-800">{editing.title ? '✏️ Editar' : '➕ Nuevo'} Cuestionario</h2>
-                            </div>
+                            <h2 className="text-4xl font-bold text-gray-800 mb-6">{editing.title ? '✏️ Editar' : '➕ Nuevo'} Cuestionario</h2>
                             <div className="bg-white p-6 rounded-2xl shadow-lg mb-6">
                                 <input placeholder="Título del cuestionario" value={editing.title} onChange={(e) => setEditing({...editing, title: e.target.value})} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg mb-4 text-xl font-bold focus:border-blue-500 focus:outline-none" />
                                 <textarea placeholder="Descripción" value={editing.description} onChange={(e) => setEditing({...editing, description: e.target.value})} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none" rows="3" />
@@ -468,12 +465,12 @@
                                     </div>
                                     <input placeholder="Escribe tu pregunta" value={q.question} onChange={(e) => updateQ(i, 'question', e.target.value)} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg mb-4 font-semibold focus:border-blue-500 focus:outline-none" />
                                     <div className="space-y-2 mb-4">
-                                        <p className="text-sm text-gray-600 mb-2">Marca el círculo de la respuesta correcta:</p>
+                                        <p className="text-sm text-gray-600 mb-2 font-semibold">Marca el círculo de la respuesta correcta:</p>
                                         {q.options.map((opt, oi) => (
                                             <div key={oi} className="flex gap-2 items-center">
-                                                <input type="radio" checked={q.correct === oi} onChange={() => updateQ(i, 'correct', oi)} className="w-5 h-5 cursor-pointer" />
+                                                <input type="radio" name={`correct-${i}`} checked={q.correct === oi} onChange={() => updateQ(i, 'correct', oi)} className="w-5 h-5 cursor-pointer" />
                                                 <input placeholder={`Opción ${oi+1}`} value={opt} onChange={(e) => updateOpt(i, oi, e.target.value)} className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none" />
-                                                {q.correct === oi && <span className="text-green-600 font-semibold text-sm">✓ Correcta</span>}
+                                                {q.correct === oi && <span className="text-green-600 font-bold text-sm whitespace-nowrap">✓ Correcta</span>}
                                             </div>
                                         ))}
                                     </div>
@@ -497,10 +494,7 @@
                         <div className="max-w-3xl mx-auto">
                             <div className="mb-6">
                                 <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
-                                    <div className="flex items-center gap-3">
-                                        <img src="logo.png" alt="Logo" className="w-12 h-12 object-contain" />
-                                        <h2 className="text-2xl font-bold text-gray-800">{quiz.title}</h2>
-                                    </div>
+                                    <h2 className="text-2xl font-bold text-gray-800">{quiz.title}</h2>
                                     <span className="text-gray-600">Pregunta {qIdx+1} de {quiz.questions.length}</span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
