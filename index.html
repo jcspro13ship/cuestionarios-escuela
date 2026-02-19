@@ -120,17 +120,11 @@
             width: 28px; height: 28px; border-radius: 50%;
             background: #e8eaf6; color: #3f51b5;
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 0.82rem; flex-shrink: 0;
-            transition: all 0.2s;
+            font-weight: 700; font-size: 0.82rem; flex-shrink: 0; transition: all 0.2s;
         }
-        /* Estados después de responder */
-        .option-btn.correcta {
-            border-color: #4caf50; background: #f1f8e9;
-        }
+        .option-btn.correcta { border-color: #4caf50; background: #f1f8e9; }
         .option-btn.correcta .letra { background: #4caf50; color: white; }
-        .option-btn.incorrecta {
-            border-color: #f44336; background: #fff3e0;
-        }
+        .option-btn.incorrecta { border-color: #f44336; background: #fff3e0; }
         .option-btn.incorrecta .letra { background: #f44336; color: white; }
         .option-btn.opacada { opacity: 0.45; }
 
@@ -251,8 +245,6 @@
         .pct-high { background: #c8e6c9; color: #1b5e20; }
         .pct-mid  { background: #fff9c4; color: #f57f17; }
         .pct-low  { background: #ffccbc; color: #bf360c; }
-
-        /* ESTUDIANTE EXPANDIBLE */
         .estudiante-row { cursor: pointer; }
         .estudiante-row:hover td { background: #e8f0fb !important; }
         .detalle-row { display: none; }
@@ -316,7 +308,7 @@
         <button class="btn btn-secondary" onclick="cerrarSesion()" style="margin-top:20px">← Cerrar sesión</button>
     </div>
 
-    <!-- 3. QUIZ (una pregunta a la vez) -->
+    <!-- 3. QUIZ -->
     <div id="quiz-section" class="card hidden">
         <div class="quiz-top">
             <h2 id="quiz-title" style="font-size:1.1rem"></h2>
@@ -448,21 +440,15 @@
 // ⚙️ CONFIGURACIÓN
 // ============================================================
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWg0jQtR8sEWoglZ-RBtgAa5I05gNw_IwgIIEbPMmiZ5zdJSrb-7M6PDFJQBRfFmjGWw/exec';
-const ADMIN_PASSWORD    = 'fequundar2026';
+const ADMIN_PASSWORD    = 'fequundar2024';
 // ============================================================
 
-
-
-// ── Estado ────────────────────────────────────────────────
+// ── Estado global ─────────────────────────────────────────
 let nombreAlumno = '', cedulaAlumno = '';
 let quizActual = null, claveActual = '', claveEditando = '';
-let preguntaIdx = 0;
-let respuestas  = [];
-let respondioActual = false;
+let preguntaIdx = 0, respuestas = [], respondioActual = false;
+let opcionSeleccionada = null;
 const LETRAS = ['A','B','C','D'];
-
-// ── Cuestionarios ─────────────────────────────────────────
-function getCuestionarios() { return window._quizzesCache || {}; }
 
 // ── LOGIN ─────────────────────────────────────────────────
 function entrar() {
@@ -486,9 +472,10 @@ function mostrarCatalogo() {
         `👋 Hola, ${nombreAlumno} · ID: ${cedulaAlumno} — Elige un cuestionario.`;
     const grid = document.getElementById('cuestionarios-grid');
     grid.innerHTML = '<p style="color:#aaa;grid-column:1/-1;text-align:center;padding:20px">⏳ Cargando cuestionarios...</p>';
+
     const script = document.createElement('script');
     window._quizzesCallback = function(data) {
-        document.getElementById('jsonp-quizzes')?.remove();
+        document.getElementById('jsonp-quizzes') && document.getElementById('jsonp-quizzes').remove();
         window._quizzesCache = {};
         grid.innerHTML = '';
         if (!data || !data.length) {
@@ -519,11 +506,11 @@ function mostrarCatalogo() {
 // ── QUIZ ──────────────────────────────────────────────────
 function iniciarCuestionario(id) {
     const cache = window._quizzesCache || {};
-    claveActual  = id;
-    quizActual   = cache[id];
+    claveActual = id;
+    quizActual  = cache[id];
     if (!quizActual) { alert('Error al cargar el cuestionario. Intenta de nuevo.'); return; }
-    respuestas   = new Array(quizActual.preguntas.length).fill(null);
-    preguntaIdx  = 0;
+    respuestas  = new Array(quizActual.preguntas.length).fill(null);
+    preguntaIdx = 0;
     mostrar('quiz-section');
     document.getElementById('quiz-title').textContent  = (quizActual.emoji||'') + ' ' + quizActual.titulo;
     document.getElementById('quiz-alumno').textContent = `${nombreAlumno} · ID: ${cedulaAlumno}`;
@@ -533,16 +520,13 @@ function iniciarCuestionario(id) {
 function renderPreguntaActual() {
     const p     = quizActual.preguntas[preguntaIdx];
     const total = quizActual.preguntas.length;
-    respondioActual = false;
+    respondioActual  = false;
+    opcionSeleccionada = null;
 
-    // Contador y barra
     document.getElementById('pregunta-badge').textContent = `${preguntaIdx+1} / ${total}`;
     document.getElementById('progress-bar').style.width   = ((preguntaIdx / total) * 100) + '%';
+    document.getElementById('question-text').textContent  = p.pregunta;
 
-    // Texto
-    document.getElementById('question-text').textContent = p.pregunta;
-
-    // Opciones
     const cont = document.getElementById('options-container');
     cont.innerHTML = '';
     p.opciones.forEach((op, j) => {
@@ -553,30 +537,24 @@ function renderPreguntaActual() {
         cont.appendChild(btn);
     });
 
-    // Feedback oculto
     const fb = document.getElementById('feedback-inline');
     fb.style.display = 'none';
     fb.className = 'feedback-inline';
 
-    // Botones
     document.getElementById('btn-confirmar').style.display = 'block';
     document.getElementById('btn-confirmar').disabled = true;
     document.getElementById('btn-siguiente').style.display = 'none';
 }
 
-let opcionSeleccionada = null;
-
 function seleccionarOpcion(j) {
     if (respondioActual) return;
     opcionSeleccionada = j;
     document.querySelectorAll('.option-btn').forEach((btn, i) => {
-        btn.classList.toggle('selected', i === j);
-        // Reset visual
         btn.classList.remove('correcta','incorrecta','opacada');
         btn.style.borderColor = i === j ? '#1a6fc4' : '';
         btn.style.background  = i === j ? '#e8f0fb' : '';
         btn.querySelector('.letra').style.background = i === j ? '#1a6fc4' : '';
-        btn.querySelector('.letra').style.color      = i === j ? 'white' : '';
+        btn.querySelector('.letra').style.color      = i === j ? 'white'   : '';
     });
     document.getElementById('btn-confirmar').disabled = false;
 }
@@ -584,24 +562,22 @@ function seleccionarOpcion(j) {
 function confirmarRespuesta() {
     if (opcionSeleccionada === null) return;
     respondioActual = true;
-    const p         = quizActual.preguntas[preguntaIdx];
-    const correcta  = p.correcta;
-    const elegida   = opcionSeleccionada;
-    const esOk      = elegida === correcta;
+    const p        = quizActual.preguntas[preguntaIdx];
+    const correcta = p.correcta;
+    const elegida  = opcionSeleccionada;
+    const esOk     = elegida === correcta;
     respuestas[preguntaIdx] = elegida;
 
-    // Colorear botones
     document.querySelectorAll('.option-btn').forEach((btn, i) => {
         btn.disabled = true;
         btn.style.borderColor = ''; btn.style.background = '';
         btn.querySelector('.letra').style.background = '';
         btn.querySelector('.letra').style.color = '';
-        if (i === correcta)                      btn.classList.add('correcta');
-        else if (i === elegida && !esOk)         btn.classList.add('incorrecta');
-        else                                     btn.classList.add('opacada');
+        if (i === correcta)             btn.classList.add('correcta');
+        else if (i === elegida && !esOk) btn.classList.add('incorrecta');
+        else                             btn.classList.add('opacada');
     });
 
-    // Mostrar feedback inline
     const fb = document.getElementById('feedback-inline');
     fb.className = `feedback-inline ${esOk ? 'correcto' : 'incorrecto'}`;
     fb.style.display = 'block';
@@ -609,12 +585,12 @@ function confirmarRespuesta() {
     document.getElementById('fb-titulo').textContent = esOk ? '¡Correcto!' : 'Incorrecto';
     document.getElementById('fb-titulo').className   = `fb-titulo ${esOk ? 'correcto' : 'incorrecto'}`;
 
+    const fbCorrecta = document.getElementById('fb-correcta');
     if (!esOk) {
-        document.getElementById('fb-correcta').innerHTML =
-            `La respuesta correcta era: <strong>${escHtml(p.opciones[correcta])}</strong>`;
-        document.getElementById('fb-correcta').style.display = 'block';
+        fbCorrecta.innerHTML = `La respuesta correcta era: <strong>${escHtml(p.opciones[correcta])}</strong>`;
+        fbCorrecta.style.display = 'block';
     } else {
-        document.getElementById('fb-correcta').style.display = 'none';
+        fbCorrecta.style.display = 'none';
     }
 
     const expBox = document.getElementById('fb-explicacion');
@@ -625,16 +601,13 @@ function confirmarRespuesta() {
         expBox.style.display = 'none';
     }
 
-    // Scroll al feedback
     fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-    // Cambiar botones
     document.getElementById('btn-confirmar').style.display = 'none';
     const btnSig = document.getElementById('btn-siguiente');
-    const esUltima = preguntaIdx === quizActual.preguntas.length - 1;
-    btnSig.textContent  = esUltima ? 'Ver resultado final →' : 'Siguiente pregunta →';
+    btnSig.textContent   = preguntaIdx === quizActual.preguntas.length - 1 ? 'Ver resultado final →' : 'Siguiente pregunta →';
     btnSig.style.display = 'block';
-    opcionSeleccionada = null;
+    opcionSeleccionada   = null;
 }
 
 function siguientePregunta() {
@@ -649,22 +622,22 @@ function siguientePregunta() {
 
 // ── RESULTADO FINAL ───────────────────────────────────────
 function mostrarResultadoFinal() {
-    const correctas = respuestas.filter((r,i) => r === quizActual.preguntas[i].correcta).length;
-    const total     = quizActual.preguntas.length;
+    const correctas   = respuestas.filter((r,i) => r === quizActual.preguntas[i].correcta).length;
+    const total       = quizActual.preguntas.length;
     const incorrectas = total - correctas;
-    const pct       = Math.round(correctas / total * 100);
+    const pct         = Math.round(correctas / total * 100);
 
     const circle = document.getElementById('score-circle');
     circle.className = 'score-circle ' + (pct>=80?'score-excelente':pct>=60?'score-bien':'score-bajo');
-    document.getElementById('score-number').textContent   = correctas;
-    document.getElementById('score-total').textContent    = total;
-    document.getElementById('result-titulo').textContent  = quizActual.titulo;
-    document.getElementById('result-msg').textContent     =
+    document.getElementById('score-number').textContent  = correctas;
+    document.getElementById('score-total').textContent   = total;
+    document.getElementById('result-titulo').textContent = quizActual.titulo;
+    document.getElementById('result-msg').textContent    =
         pct>=80 ? '🎉 ¡Excelente trabajo!' :
         pct>=60 ? '👍 Buen esfuerzo, sigue practicando' :
                   '💪 Continúa estudiando, tú puedes';
-    document.getElementById('saving-msg').style.display   = 'block';
-    document.getElementById('sheets-status').textContent  = '';
+    document.getElementById('saving-msg').style.display  = 'block';
+    document.getElementById('sheets-status').textContent = '';
 
     document.getElementById('resumen-grid').innerHTML = `
         <div class="resumen-box"><div class="val" style="color:#2e7d32">${correctas}</div><div class="lbl">Correctas</div></div>
@@ -698,7 +671,7 @@ function enviarASheets(correctas, porcentaje) {
     .catch(() => {
         document.getElementById('saving-msg').style.display = 'none';
         document.getElementById('sheets-status').innerHTML =
-            '<span style="color:#c62828;font-weight:600;font-size:0.87rem">⚠️ No se pudo guardar. Revisa la URL del script.</span>';
+            '<span style="color:#c62828;font-weight:600;font-size:0.87rem">⚠️ No se pudo guardar.</span>';
     });
 }
 
@@ -715,7 +688,10 @@ function verificarAdmin() {
 }
 
 // ── PANEL ADMIN ───────────────────────────────────────────
-function abrirPanelAdmin() { renderAdminLista(); document.getElementById('modal-admin').classList.add('active'); }
+function abrirPanelAdmin() {
+    renderAdminLista();
+    document.getElementById('modal-admin').classList.add('active');
+}
 function cambiarTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -723,12 +699,15 @@ function cambiarTab(tabId, btn) {
     btn.classList.add('active');
     if (tabId === 'tab-resultados') cargarResultados();
 }
+
+// ── CUESTIONARIOS ADMIN ───────────────────────────────────
 function renderAdminLista() {
     const container = document.getElementById('admin-lista-cuestionarios');
     container.innerHTML = '<p style="color:#aaa;font-size:0.88rem">⏳ Cargando...</p>';
+
     const script = document.createElement('script');
     window._adminQuizzesCallback = function(data) {
-        document.getElementById('jsonp-admin-quizzes')?.remove();
+        document.getElementById('jsonp-admin-quizzes') && document.getElementById('jsonp-admin-quizzes').remove();
         window._quizzesCache = {};
         container.innerHTML = '';
         if (!data || !data.length) {
@@ -764,6 +743,7 @@ function crearCuestionario() {
     const titulo = document.getElementById('new-titulo').value.trim();
     const desc   = document.getElementById('new-desc').value.trim();
     if (!titulo) { alert('El título es obligatorio'); return; }
+
     const nuevoQuiz = {
         accion      : 'guardarQuiz',
         id          : 'quiz_' + Date.now(),
@@ -800,49 +780,39 @@ function eliminarCuestionario(id) {
         renderAdminLista();
     }).catch(() => alert('⚠️ Error al eliminar.'));
 }
-function crearCuestionario() {
-    const emoji  = document.getElementById('new-emoji').value.trim()  || '📝';
-    const titulo = document.getElementById('new-titulo').value.trim();
-    const desc   = document.getElementById('new-desc').value.trim();
-    if (!titulo) { alert('El título es obligatorio'); return; }
-    const c = getCuestionarios();
-    c['quiz_'+Date.now()] = { emoji, titulo, descripcion: desc, preguntas: [] };
-    saveCuestionarios(c);
-    document.getElementById('new-emoji').value = '';
-    document.getElementById('new-titulo').value = '';
-    document.getElementById('new-desc').value = '';
-    renderAdminLista();
-    alert(`✅ "${titulo}" creado. Ahora edítalo para agregar preguntas.`);
-}
-function eliminarCuestionario(clave) {
-    const c = getCuestionarios();
-    if (!confirm(`¿Eliminar "${c[clave].titulo}"?`)) return;
-    delete c[clave]; saveCuestionarios(c); renderAdminLista();
-}
-function abrirEditar(clave) {
-    claveEditando = clave;
-    const d = getCuestionarios()[clave];
+
+// ── EDITAR CUESTIONARIO ───────────────────────────────────
+function abrirEditar(id) {
+    claveEditando = id;
+    const cache = window._quizzesCache || {};
+    const d = cache[id];
+    if (!d) { alert('Error al cargar el cuestionario.'); return; }
+
     document.getElementById('editar-titulo-modal').textContent = 'Editar: ' + d.titulo;
-    document.getElementById('edit-emoji').value  = d.emoji||'';
-    document.getElementById('edit-titulo').value = d.titulo;
-    document.getElementById('edit-desc').value   = d.descripcion;
-    const c = document.getElementById('edit-preguntas-container');
-    c.innerHTML = '';
-    d.preguntas.forEach((p,i) => agregarPreguntaConDatos(p,i));
+    document.getElementById('edit-emoji').value  = d.emoji  || '';
+    document.getElementById('edit-titulo').value = d.titulo || '';
+    document.getElementById('edit-desc').value   = d.descripcion || '';
+
+    const cont = document.getElementById('edit-preguntas-container');
+    cont.innerHTML = '';
+    d.preguntas.forEach((p, i) => agregarPreguntaConDatos(p, i));
+
     cerrarModal('modal-admin');
     document.getElementById('modal-editar').classList.add('active');
 }
+
 function agregarPregunta() {
     const n = document.getElementById('edit-preguntas-container').querySelectorAll('.pregunta-admin').length;
     agregarPreguntaConDatos({ pregunta:'', opciones:['','','',''], correcta:0, explicacion:'' }, n);
 }
+
 function agregarPreguntaConDatos(p, idx) {
-    const c = document.getElementById('edit-preguntas-container');
-    const div = document.createElement('div');
+    const cont = document.getElementById('edit-preguntas-container');
+    const div  = document.createElement('div');
     div.className = 'pregunta-admin';
     div.innerHTML = `
         <label style="font-size:0.81rem;margin-bottom:4px;color:#777">Pregunta ${idx+1}</label>
-        <input type="text" class="p-texto" placeholder="Escribe la pregunta aquí" value="${escHtml(p.pregunta)}">
+        <input type="text" class="p-texto" placeholder="Escribe la pregunta aquí" value="${escHtml(p.pregunta||'')}">
         <div class="opciones-admin">
             <input type="text" class="p-op" placeholder="Opción A" value="${escHtml(p.opciones[0]||'')}">
             <input type="text" class="p-op" placeholder="Opción B" value="${escHtml(p.opciones[1]||'')}">
@@ -861,18 +831,21 @@ function agregarPreguntaConDatos(p, idx) {
         </div>
         <label style="font-size:0.81rem;margin-bottom:4px;color:#777">💡 Explicación de la respuesta</label>
         <textarea class="p-explicacion" placeholder="Escribe aquí por qué esa es la respuesta correcta...">${escHtml(p.explicacion||'')}</textarea>`;
-    c.appendChild(div);
+    cont.appendChild(div);
 }
+
 function renumerarPreguntas() {
     document.querySelectorAll('.pregunta-admin').forEach((div,i) => {
         div.querySelector('label').textContent = `Pregunta ${i+1}`;
     });
 }
+
 function guardarEdicion() {
     const emoji  = document.getElementById('edit-emoji').value.trim()  || '📝';
     const titulo = document.getElementById('edit-titulo').value.trim();
     const desc   = document.getElementById('edit-desc').value.trim();
     if (!titulo) { alert('El título es obligatorio'); return; }
+
     const preguntas = []; let valido = true;
     document.querySelectorAll('.pregunta-admin').forEach(div => {
         const texto       = div.querySelector('.p-texto').value.trim();
@@ -884,6 +857,7 @@ function guardarEdicion() {
     });
     if (!valido)           { alert('Completa todos los campos de cada pregunta.'); return; }
     if (!preguntas.length) { alert('Agrega al menos una pregunta.'); return; }
+
     fetch(GOOGLE_SCRIPT_URL, {
         method : 'POST',
         mode   : 'no-cors',
@@ -910,21 +884,22 @@ function cargarResultados() {
 
     const script = document.createElement('script');
     window._jsonpCallback = function(data) {
-        document.getElementById('jsonp-script')?.remove();
+        document.getElementById('jsonp-script') && document.getElementById('jsonp-script').remove();
         if (data.error) {
-            cont.innerHTML = '<div style="background:#fff3e0;border-radius:10px;padding:16px;color:#bf360c">⚠️ Error: ' + data.error + '</div>';
+            cont.innerHTML = `<div style="background:#fff3e0;border-radius:10px;padding:16px;color:#bf360c">⚠️ Error: ${data.error}</div>`;
             return;
         }
         renderResultados(Array.isArray(data) ? data : []);
     };
-    script.id  = 'jsonp-script';
-    script.src = GOOGLE_SCRIPT_URL + '?callback=_jsonpCallback';
+    script.id    = 'jsonp-script';
+    script.src   = GOOGLE_SCRIPT_URL + '?callback=_jsonpCallback';
     script.onerror = function() {
-        document.getElementById('jsonp-script')?.remove();
+        document.getElementById('jsonp-script') && document.getElementById('jsonp-script').remove();
         cont.innerHTML = '<div style="background:#fff3e0;border-radius:10px;padding:16px;color:#bf360c">⚠️ No se pudieron cargar los resultados.</div>';
     };
     document.body.appendChild(script);
 }
+
 function renderResultados(data) {
     const cont = document.getElementById('resultados-contenido');
     if (!data || !data.length) {
@@ -932,25 +907,22 @@ function renderResultados(data) {
         return;
     }
 
-    // Stats generales
     const totalIntentos    = data.length;
-    const estudiantesSet = new Set(data.map(r => r['Cedula'] || r['Cédula'] || ''));
+    const estudiantesSet   = new Set(data.map(r => r['Cedula'] || r['Cédula'] || ''));
     const totalEstudiantes = estudiantesSet.size;
     const promedioGral     = Math.round(data.reduce((s,r) => s + parsePct(r['Porcentaje']), 0) / totalIntentos);
 
-    // Por cuestionario
     const porQuiz = {};
     data.forEach(r => {
-        const q = r['Cuestionario']||'Sin nombre';
+        const q = r['Cuestionario'] || 'Sin nombre';
         if (!porQuiz[q]) porQuiz[q] = { suma:0, count:0 };
         porQuiz[q].suma  += parsePct(r['Porcentaje']);
         porQuiz[q].count++;
     });
 
-    // Por estudiante (agrupado por cedula)
     const porEstudiante = {};
     data.forEach(r => {
-        const key = r['Cedula'] || r['Cédula'] || '?';
+        const key = String(r['Cedula'] || r['Cédula'] || '?');
         if (!porEstudiante[key]) porEstudiante[key] = { nombre: r['Nombre']||'', intentos: [] };
         porEstudiante[key].intentos.push(r);
     });
@@ -973,8 +945,7 @@ function renderResultados(data) {
         </div>`;
     });
 
-    // Filtros
-    const quizOpts = Object.keys(porQuiz).map(q=>`<option value="${escHtml(q)}">${escHtml(q)}</option>`).join('');
+    const quizOpts = Object.keys(porQuiz).map(q => `<option value="${escHtml(q)}">${escHtml(q)}</option>`).join('');
     html += `
         <div class="section-title">👤 Detalle por estudiante <span style="font-weight:400;color:#aaa;font-size:0.8rem">(clic para expandir)</span></div>
         <div class="results-filters">
@@ -992,26 +963,24 @@ function renderResultados(data) {
         </table></div>`;
 
     cont.innerHTML = html;
-    window._resData        = data;
-    window._resEstudiante  = porEstudiante;
+    window._resData       = data;
+    window._resEstudiante = porEstudiante;
     filtrarTabla();
 }
 
 function filtrarTabla() {
-    const data       = window._resData || [];
+    const data        = window._resData || [];
     const estudiantes = window._resEstudiante || {};
-    const busqueda   = (document.getElementById('filtro-nombre')?.value||'').toLowerCase();
-    const quizFiltro = document.getElementById('filtro-quiz')?.value||'';
-    const tbody      = document.getElementById('results-tbody');
+    const busqueda    = (document.getElementById('filtro-nombre')?.value||'').toLowerCase();
+    const quizFiltro  = document.getElementById('filtro-quiz')?.value||'';
+    const tbody       = document.getElementById('results-tbody');
     if (!tbody) return;
 
-    // Filtrar estudiantes
     const cedulasFiltradas = Object.keys(estudiantes).filter(ced => {
         const e = estudiantes[ced];
         const matchNombre = !busqueda ||
             e.nombre.toLowerCase().includes(busqueda) ||
-            ced.toLowerCase().includes(busqueda) ||
-            (r['Cédula']||'').toLowerCase().includes(busqueda);
+            ced.toLowerCase().includes(busqueda);
         const matchQuiz = !quizFiltro ||
             e.intentos.some(i => i['Cuestionario'] === quizFiltro);
         return matchNombre && matchQuiz;
@@ -1022,18 +991,15 @@ function filtrarTabla() {
         return;
     }
 
-    let rows = '';
-    cedulasFiltradas.forEach(ced => {
+    tbody.innerHTML = cedulasFiltradas.map(ced => {
         const e = estudiantes[ced];
-        // Filtrar intentos si hay filtro de quiz
         const intentosFiltrados = quizFiltro
             ? e.intentos.filter(i => i['Cuestionario'] === quizFiltro)
             : e.intentos;
         const promedio = Math.round(intentosFiltrados.reduce((s,i) => s+parsePct(i['Porcentaje']),0) / intentosFiltrados.length);
         const clase    = promedio>=80?'pct-high':promedio>=60?'pct-mid':'pct-low';
-        const rowId    = 'det_'+ced.replace(/\D/g,'');
-
-        rows += `
+        const rowId    = 'det_' + ced.replace(/\W/g,'');
+        return `
         <tr class="estudiante-row" onclick="toggleDetalle('${rowId}')">
             <td><strong>${escHtml(e.nombre)}</strong></td>
             <td style="color:#888">${escHtml(ced)}</td>
@@ -1041,23 +1007,20 @@ function filtrarTabla() {
             <td><span class="pct-badge ${clase}">${promedio}%</span></td>
         </tr>
         <tr class="detalle-row" id="${rowId}">
-            <td colspan="4">
-                <div class="detalle-inner">
-                    ${intentosFiltrados.map(i => {
-                        const p = parsePct(i['Porcentaje']);
-                        const cl = p>=80?'pct-high':p>=60?'pct-mid':'pct-low';
-                        return `<div class="intento-line">
-                            <span class="pct-badge ${cl}" style="font-size:0.77rem">${p}%</span>
-                            <span style="font-weight:600;color:#0d1b2a">${escHtml(i['Cuestionario']||'')}</span>
-                            <span style="color:#aaa">${escHtml(i['Fecha']||'')}</span>
-                            <span style="color:#888">${i['Correctas']}/${i['Total']} correctas</span>
-                        </div>`;
-                    }).join('')}
-                </div>
-            </td>
+            <td colspan="4"><div class="detalle-inner">
+                ${intentosFiltrados.map(i => {
+                    const p  = parsePct(i['Porcentaje']);
+                    const cl = p>=80?'pct-high':p>=60?'pct-mid':'pct-low';
+                    return `<div class="intento-line">
+                        <span class="pct-badge ${cl}" style="font-size:0.77rem">${p}%</span>
+                        <span style="font-weight:600;color:#0d1b2a">${escHtml(i['Cuestionario']||'')}</span>
+                        <span style="color:#aaa">${escHtml(i['Fecha']||'')}</span>
+                        <span style="color:#888">${i['Correctas']}/${i['Total']} correctas</span>
+                    </div>`;
+                }).join('')}
+            </div></td>
         </tr>`;
-    });
-    tbody.innerHTML = rows;
+    }).join('');
 }
 
 function toggleDetalle(id) {
@@ -1074,7 +1037,11 @@ function mostrar(id) {
 }
 function cerrarModal(id) { document.getElementById(id).classList.remove('active'); }
 function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s)
+        .replace(/&/g,'&amp;')
+        .replace(/"/g,'&quot;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;');
 }
 </script>
 </body>
