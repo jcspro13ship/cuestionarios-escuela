@@ -447,7 +447,7 @@
 // ============================================================
 // ⚙️ CONFIGURACIÓN
 // ============================================================
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzYBOkxgbqAtxd8tui191WWQw4pJ09pJ4DCWSmQQkhmycICqmYsCIGs2nmQCyOF3qZ_vw/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWg0jQtR8sEWoglZ-RBtgAa5I05gNw_IwgIIEbPMmiZ5zdJSrb-7M6PDFJQBRfFmjGWw/exec';
 const ADMIN_PASSWORD    = 'fequundar2026';
 // ============================================================
 
@@ -873,29 +873,20 @@ function cargarResultados() {
     const cont = document.getElementById('resultados-contenido');
     cont.innerHTML = '<div class="loading-msg">⏳ Cargando datos...</div>';
 
-    // Crear elemento script para JSONP (evita el bloqueo CORS)
     const script = document.createElement('script');
     window._jsonpCallback = function(data) {
         document.getElementById('jsonp-script')?.remove();
         if (data.error) {
-            cont.innerHTML = `<div style="background:#fff3e0;border-radius:10px;padding:16px;color:#bf360c;font-size:0.88rem">
-                ⚠️ Error del servidor: ${data.error}</div>`;
+            cont.innerHTML = '<div style="background:#fff3e0;border-radius:10px;padding:16px;color:#bf360c">⚠️ Error: ' + data.error + '</div>';
             return;
         }
         renderResultados(Array.isArray(data) ? data : []);
     };
-
     script.id  = 'jsonp-script';
     script.src = GOOGLE_SCRIPT_URL + '?callback=_jsonpCallback';
     script.onerror = function() {
         document.getElementById('jsonp-script')?.remove();
-        cont.innerHTML = `<div style="background:#fff3e0;border-radius:10px;padding:16px;color:#bf360c;font-size:0.88rem;line-height:1.8">
-            ⚠️ No se pudieron cargar los resultados.<br><br>
-            <strong>Verifica:</strong><br>
-            • La URL del script está correctamente pegada en index.html<br>
-            • En "Administrar implementaciones" el acceso es <strong>"Cualquier usuario"</strong><br>
-            • Republicaste como <strong>nueva versión</strong> tras el último cambio
-        </div>`;
+        cont.innerHTML = '<div style="background:#fff3e0;border-radius:10px;padding:16px;color:#bf360c">⚠️ No se pudieron cargar los resultados.</div>';
     };
     document.body.appendChild(script);
 }
