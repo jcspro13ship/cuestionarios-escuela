@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuestionarios - Escuela de Reproducción</title>
+    <title>Fequundar - Cuestionarios</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -11,71 +11,128 @@
             background: #f0f4f8;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* HEADER CON LOGO */
+        .header {
+            width: 100%;
+            background: #0d1b2a;
+            display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 16px 20px;
+            position: relative;
         }
-        .container {
+        .header img {
+            height: 70px;
+            object-fit: contain;
+        }
+        .admin-btn {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.08);
+            border: none;
+            color: rgba(255,255,255,0.3);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .admin-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 680px;
+            padding: 28px 20px;
+        }
+
+        /* CARDS */
+        .card {
             background: white;
             border-radius: 16px;
             padding: 32px;
-            max-width: 640px;
-            width: 100%;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
         }
-        h1 { color: #1a237e; margin-bottom: 6px; font-size: 1.6rem; }
-        .subtitle { color: #666; margin-bottom: 24px; font-size: 0.95rem; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; }
-        input {
+        h2 { color: #0d1b2a; margin-bottom: 6px; font-size: 1.45rem; }
+        .subtitle { color: #777; margin-bottom: 24px; font-size: 0.93rem; }
+
+        /* FORMULARIOS */
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.93rem; }
+        input, select, textarea {
             width: 100%;
             padding: 10px 14px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 1rem;
+            font-family: inherit;
             transition: border 0.2s;
         }
-        input:focus { outline: none; border-color: #3f51b5; }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #1a6fc4;
+        }
+        textarea { resize: vertical; min-height: 70px; }
+
+        /* BOTONES */
         .btn {
-            background: #3f51b5;
+            background: #1a6fc4;
             color: white;
             border: none;
-            padding: 12px 28px;
+            padding: 12px 20px;
             border-radius: 8px;
             font-size: 1rem;
             cursor: pointer;
             width: 100%;
-            margin-top: 4px;
+            margin-top: 6px;
             transition: background 0.2s;
+            font-family: inherit;
         }
-        .btn:hover { background: #303f9f; }
+        .btn:hover { background: #155fa0; }
         .btn-secondary {
             background: white;
-            color: #3f51b5;
-            border: 2px solid #3f51b5;
+            color: #1a6fc4;
+            border: 2px solid #1a6fc4;
             margin-top: 10px;
         }
-        .btn-secondary:hover { background: #e8eaf6; }
+        .btn-secondary:hover { background: #e8f0fb; }
+        .btn-danger {
+            background: white;
+            color: #c62828;
+            border: 2px solid #c62828;
+            margin-top: 6px;
+        }
+        .btn-danger:hover { background: #ffebee; }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            width: auto;
+            margin: 0;
+        }
 
-        /* Grilla de cuestionarios */
-        #catalogo-section { display: none; }
+        /* CATÁLOGO */
         .bienvenida {
-            background: #e8eaf6;
+            background: #e8f0fb;
             border-radius: 10px;
-            padding: 14px 18px;
+            padding: 12px 16px;
             margin-bottom: 20px;
-            color: #1a237e;
-            font-weight: 600;
+            color: #0d1b2a;
+            font-size: 0.95rem;
         }
         .cuestionarios-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 14px;
-            margin-bottom: 20px;
         }
-        @media (max-width: 480px) {
-            .cuestionarios-grid { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 480px) { .cuestionarios-grid { grid-template-columns: 1fr; } }
         .quiz-card {
             border: 2px solid #e0e0e0;
             border-radius: 12px;
@@ -83,32 +140,30 @@
             cursor: pointer;
             transition: all 0.2s;
             text-align: center;
+            background: white;
         }
         .quiz-card:hover {
-            border-color: #3f51b5;
-            background: #f0f2ff;
+            border-color: #1a6fc4;
+            background: #f0f5ff;
             transform: translateY(-2px);
         }
-        .quiz-card .emoji { font-size: 2.2rem; margin-bottom: 8px; }
-        .quiz-card .titulo { font-weight: 700; color: #1a237e; font-size: 1rem; }
-        .quiz-card .desc { color: #666; font-size: 0.82rem; margin-top: 4px; }
-        .quiz-card .preguntas { 
-            color: #3f51b5; 
-            font-size: 0.8rem; 
-            margin-top: 8px;
-            font-weight: 600;
-        }
+        .quiz-card .emoji { font-size: 2rem; margin-bottom: 8px; }
+        .quiz-card .titulo { font-weight: 700; color: #0d1b2a; font-size: 0.97rem; }
+        .quiz-card .desc { color: #666; font-size: 0.8rem; margin-top: 4px; }
+        .quiz-card .npregs { color: #1a6fc4; font-size: 0.78rem; margin-top: 8px; font-weight: 600; }
 
-        /* Cuestionario activo */
-        #quiz-section { display: none; }
+        /* CUESTIONARIO ACTIVO */
+        .progress { background: #e0e0e0; border-radius: 8px; height: 8px; margin-bottom: 6px; overflow: hidden; }
+        .progress-bar { background: #1a6fc4; height: 100%; border-radius: 8px; transition: width 0.4s; }
+        .question-counter { color: #888; font-size: 0.85rem; margin-bottom: 18px; }
         .question-card {
-            background: #f8f9ff;
+            background: #f6f9ff;
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
-            border-left: 4px solid #3f51b5;
+            padding: 18px;
+            margin-bottom: 14px;
+            border-left: 4px solid #1a6fc4;
         }
-        .question-text { font-weight: 600; margin-bottom: 12px; color: #222; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #222; font-size: 0.97rem; }
         .options label {
             display: flex;
             align-items: center;
@@ -119,81 +174,224 @@
             font-weight: 400;
             margin-bottom: 4px;
             transition: background 0.15s;
+            font-size: 0.93rem;
         }
-        .options label:hover { background: #e8eaf6; }
-        .options input[type="radio"] { width: auto; accent-color: #3f51b5; }
-        .progress { background: #e0e0e0; border-radius: 8px; height: 8px; margin-bottom: 20px; overflow: hidden; }
-        .progress-bar { background: #3f51b5; height: 100%; border-radius: 8px; transition: width 0.4s; }
-        .question-counter { color: #666; font-size: 0.9rem; margin-bottom: 8px; }
+        .options label:hover { background: #dde8f8; }
+        .options input[type="radio"] { width: auto; accent-color: #1a6fc4; }
 
-        /* Resultado */
-        #result-section { display: none; text-align: center; }
+        /* RESULTADO */
+        .result-center { text-align: center; }
         .score-circle {
             width: 120px;
             height: 120px;
             border-radius: 50%;
-            background: #3f51b5;
+            background: #1a6fc4;
             color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 700;
         }
-        .score-circle span { font-size: 0.85rem; font-weight: 400; }
-        .result-msg { color: #444; margin-bottom: 20px; font-size: 1.05rem; }
+        .score-circle span { font-size: 0.82rem; font-weight: 400; }
+        .result-msg { color: #444; margin-bottom: 18px; font-size: 1.05rem; }
         .success-msg { color: #2e7d32; font-weight: 600; }
         .error-msg { color: #c62828; font-weight: 600; }
-        .sending-msg { color: #3f51b5; font-style: italic; margin-bottom: 10px; }
+        .saving-msg { color: #1a6fc4; font-style: italic; font-size: 0.9rem; }
+
+        /* PANEL ADMIN */
+        .admin-section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0d1b2a;
+            margin: 22px 0 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .quiz-admin-item {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .quiz-admin-item .info { flex: 1; }
+        .quiz-admin-item .info strong { display: block; color: #0d1b2a; font-size: 0.95rem; }
+        .quiz-admin-item .info span { color: #888; font-size: 0.82rem; }
+        .quiz-admin-item .actions { display: flex; gap: 8px; }
+        .pregunta-admin {
+            background: #f6f9ff;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #d0dff5;
+        }
+        .pregunta-admin input { margin-bottom: 6px; }
+        .opciones-admin { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+        @media (max-width: 480px) { .opciones-admin { grid-template-columns: 1fr; } }
+        .correcta-row { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: #555; }
+        .correcta-row select { padding: 5px 8px; font-size: 0.88rem; width: auto; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            width: 100%;
+            max-width: 560px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal h3 { color: #0d1b2a; margin-bottom: 18px; font-size: 1.2rem; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-<div class="container">
 
-    <!-- PASO 1: Solo pedir nombre -->
-    <div id="start-section">
-        <h1>🐾 Escuela de Reproducción</h1>
-        <p class="subtitle">Ingresa tu nombre para ver los cuestionarios disponibles</p>
+<!-- HEADER -->
+<div class="header">
+    <img src="fequundar-logo.png" alt="Fequundar">
+    <button class="admin-btn" onclick="abrirLoginAdmin()" title="Administrador">⚙️</button>
+</div>
+
+<div class="page">
+
+    <!-- 1. LOGIN ESTUDIANTE -->
+    <div id="login-section" class="card">
+        <h2>Bienvenido</h2>
+        <p class="subtitle">Ingresa tus datos para ver los cuestionarios disponibles</p>
         <div class="form-group">
-            <label>Tu nombre completo</label>
-            <input type="text" id="nombre" placeholder="Ej: Carlos Ramírez" onkeydown="if(event.key==='Enter') entrar()">
+            <label>Nombre completo</label>
+            <input type="text" id="inp-nombre" placeholder="Ej: Carlos Ramírez"
+                onkeydown="if(event.key==='Enter') document.getElementById('inp-cedula').focus()">
+        </div>
+        <div class="form-group">
+            <label>Número de identificación</label>
+            <input type="text" id="inp-cedula" placeholder="Ej: 1234567890"
+                onkeydown="if(event.key==='Enter') entrar()">
         </div>
         <button class="btn" onclick="entrar()">Ver cuestionarios →</button>
     </div>
 
-    <!-- PASO 2: Catálogo de cuestionarios -->
-    <div id="catalogo-section">
-        <h1>📋 Cuestionarios disponibles</h1>
+    <!-- 2. CATÁLOGO -->
+    <div id="catalogo-section" class="card hidden">
+        <h2>Cuestionarios disponibles</h2>
         <div class="bienvenida" id="bienvenida-msg"></div>
         <div class="cuestionarios-grid" id="cuestionarios-grid"></div>
+        <button class="btn btn-secondary" onclick="cerrarSesion()" style="margin-top:20px">← Cerrar sesión</button>
     </div>
 
-    <!-- PASO 3: Cuestionario activo -->
-    <div id="quiz-section">
-        <h1 id="quiz-title"></h1>
+    <!-- 3. CUESTIONARIO ACTIVO -->
+    <div id="quiz-section" class="card hidden">
+        <h2 id="quiz-title"></h2>
         <p class="subtitle" id="quiz-alumno"></p>
         <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
         <p class="question-counter" id="question-counter"></p>
         <div id="questions-container"></div>
         <button class="btn" onclick="enviarRespuestas()">Enviar respuestas ✓</button>
-        <button class="btn btn-secondary" onclick="volverCatalogo()">← Volver al catálogo</button>
+        <button class="btn btn-secondary" onclick="mostrarCatalogo()">← Volver al catálogo</button>
     </div>
 
-    <!-- PASO 4: Resultado -->
-    <div id="result-section">
+    <!-- 4. RESULTADO -->
+    <div id="result-section" class="card hidden result-center">
         <div class="score-circle">
             <div id="score-number">0</div>
             <span>de <span id="score-total">0</span></span>
         </div>
-        <h2 id="quiz-title-result" style="margin-bottom:8px;color:#1a237e;"></h2>
+        <h2 id="result-titulo" style="margin-bottom:8px"></h2>
         <p class="result-msg" id="result-msg"></p>
-        <p class="sending-msg" id="sending-msg">💾 Guardando resultado...</p>
+        <p class="saving-msg" id="saving-msg">💾 Guardando resultado...</p>
         <p id="sheets-status"></p>
-        <button class="btn" onclick="volverCatalogo()" style="margin-top:16px">← Hacer otro cuestionario</button>
+        <button class="btn" onclick="mostrarCatalogo()" style="margin-top:16px">← Hacer otro cuestionario</button>
+        <button class="btn btn-secondary" onclick="cerrarSesion()">Cerrar sesión</button>
     </div>
 
+</div>
+
+<!-- MODAL: LOGIN ADMIN -->
+<div class="modal-overlay" id="modal-login-admin">
+    <div class="modal">
+        <h3>🔐 Acceso Administrador</h3>
+        <div class="form-group">
+            <label>Contraseña</label>
+            <input type="password" id="inp-admin-pass" placeholder="Contraseña"
+                onkeydown="if(event.key==='Enter') verificarAdmin()">
+        </div>
+        <button class="btn" onclick="verificarAdmin()">Entrar</button>
+        <button class="btn btn-secondary" onclick="cerrarModal('modal-login-admin')">Cancelar</button>
+    </div>
+</div>
+
+<!-- MODAL: PANEL ADMIN -->
+<div class="modal-overlay" id="modal-admin">
+    <div class="modal">
+        <h3>⚙️ Panel de Administración</h3>
+
+        <div class="admin-section-title">Cuestionarios actuales</div>
+        <div id="admin-lista-cuestionarios"></div>
+
+        <div class="admin-section-title">➕ Crear nuevo cuestionario</div>
+        <div class="form-group">
+            <label>Emoji</label>
+            <input type="text" id="new-emoji" placeholder="Ej: 🔬" style="width:80px">
+        </div>
+        <div class="form-group">
+            <label>Título</label>
+            <input type="text" id="new-titulo" placeholder="Ej: Anatomía Reproductiva">
+        </div>
+        <div class="form-group">
+            <label>Descripción corta</label>
+            <input type="text" id="new-desc" placeholder="Ej: Órganos y estructuras del sistema reproductivo">
+        </div>
+        <button class="btn" onclick="crearCuestionario()">Crear cuestionario vacío</button>
+        <button class="btn btn-secondary" onclick="cerrarModal('modal-admin')">Cerrar panel</button>
+    </div>
+</div>
+
+<!-- MODAL: EDITAR CUESTIONARIO -->
+<div class="modal-overlay" id="modal-editar">
+    <div class="modal">
+        <h3 id="editar-titulo-modal">Editar cuestionario</h3>
+
+        <div class="form-group">
+            <label>Emoji</label>
+            <input type="text" id="edit-emoji" style="width:80px">
+        </div>
+        <div class="form-group">
+            <label>Título</label>
+            <input type="text" id="edit-titulo">
+        </div>
+        <div class="form-group">
+            <label>Descripción</label>
+            <input type="text" id="edit-desc">
+        </div>
+
+        <div class="admin-section-title">Preguntas</div>
+        <div id="edit-preguntas-container"></div>
+        <button class="btn btn-secondary btn-sm" onclick="agregarPregunta()" style="width:100%;margin-bottom:10px">
+            ➕ Agregar pregunta
+        </button>
+
+        <button class="btn" onclick="guardarEdicion()">💾 Guardar cambios</button>
+        <button class="btn btn-secondary" onclick="cerrarModal('modal-editar')">Cancelar</button>
+    </div>
 </div>
 
 <script>
@@ -201,19 +399,21 @@
 // ⚙️ CONFIGURACIÓN
 // ============================================================
 const GOOGLE_SCRIPT_URL = 'TU_URL_DE_GOOGLE_APPS_SCRIPT_AQUI';
+const ADMIN_PASSWORD    = 'fequundar2024';  // ← Cambia esta contraseña
+// ============================================================
 
-// Agrega o edita tus cuestionarios aquí
-const CUESTIONARIOS = {
+// Cuestionarios por defecto (solo se usan si no hay nada en localStorage)
+const CUESTIONARIOS_DEFAULT = {
     anatomia: {
         titulo: "Anatomía Reproductiva",
         emoji: "🔬",
         descripcion: "Órganos y estructuras del sistema reproductivo",
         preguntas: [
-            { pregunta: "¿Cuál es la función principal de los ovarios?", opciones: ["Producir estrógeno y óvulos", "Transportar el óvulo", "Nutrir al embrión", "Producir progesterona únicamente"], correcta: 0 },
-            { pregunta: "¿Cómo se llama el proceso de liberación del óvulo?", opciones: ["Menstruación", "Ovulación", "Fecundación", "Implantación"], correcta: 1 },
-            { pregunta: "¿Dónde ocurre normalmente la fecundación?", opciones: ["En el útero", "En el ovario", "En la trompa de Falopio", "En la vagina"], correcta: 2 },
-            { pregunta: "¿Cuál es la función del útero?", opciones: ["Producir óvulos", "Alojar y nutrir al feto", "Filtrar la sangre", "Regular hormonas"], correcta: 1 },
-            { pregunta: "¿Qué hormona dispara la ovulación?", opciones: ["Estrógeno", "Progesterona", "LH (Hormona Luteinizante)", "FSH"], correcta: 2 },
+            { pregunta: "¿Cuál es la función principal de los ovarios?", opciones: ["Producir estrógeno y óvulos","Transportar el óvulo","Nutrir al embrión","Producir progesterona únicamente"], correcta: 0 },
+            { pregunta: "¿Cómo se llama el proceso de liberación del óvulo?", opciones: ["Menstruación","Ovulación","Fecundación","Implantación"], correcta: 1 },
+            { pregunta: "¿Dónde ocurre normalmente la fecundación?", opciones: ["En el útero","En el ovario","En la trompa de Falopio","En la vagina"], correcta: 2 },
+            { pregunta: "¿Cuál es la función del útero?", opciones: ["Producir óvulos","Alojar y nutrir al feto","Filtrar la sangre","Regular hormonas"], correcta: 1 },
+            { pregunta: "¿Qué hormona dispara la ovulación?", opciones: ["Estrógeno","Progesterona","LH (Hormona Luteinizante)","FSH"], correcta: 2 }
         ]
     },
     ciclo: {
@@ -221,96 +421,97 @@ const CUESTIONARIOS = {
         emoji: "🔄",
         descripcion: "Fases, hormonas y cambios del ciclo",
         preguntas: [
-            { pregunta: "¿Cuántos días dura en promedio el ciclo menstrual?", opciones: ["21 días", "28 días", "35 días", "14 días"], correcta: 1 },
-            { pregunta: "¿Qué fase sigue inmediatamente después de la menstruación?", opciones: ["Lútea", "Ovulatoria", "Folicular", "Secretora"], correcta: 2 },
-            { pregunta: "¿Qué estructura produce progesterona tras la ovulación?", opciones: ["Folículo de Graaf", "Cuerpo lúteo", "Endometrio", "Hipófisis"], correcta: 1 },
-            { pregunta: "¿Cuándo es más probable la fecundación en el ciclo?", opciones: ["En la menstruación", "Al inicio del ciclo", "Alrededor de la ovulación", "Al final del ciclo"], correcta: 2 },
-            { pregunta: "Si no hay fecundación, ¿qué ocurre con el cuerpo lúteo?", opciones: ["Crece más", "Se convierte en folículo", "Degenera y baja la progesterona", "Se mantiene igual"], correcta: 2 },
-        ]
-    },
-    genetica: {
-        titulo: "Genética y Herencia",
-        emoji: "🧬",
-        descripcion: "Cromosomas, genes y transmisión hereditaria",
-        preguntas: [
-            { pregunta: "¿Cuántos cromosomas tiene una célula humana normal?", opciones: ["23", "46", "48", "44"], correcta: 1 },
-            { pregunta: "¿Qué cromosomas determinan el sexo masculino?", opciones: ["XX", "XY", "YY", "X0"], correcta: 1 },
-            { pregunta: "¿Cómo se llama la división celular que forma los gametos?", opciones: ["Mitosis", "Fisión", "Meiosis", "Clonación"], correcta: 2 },
-            { pregunta: "¿Qué es un alelo dominante?", opciones: ["El que siempre se expresa", "El que se oculta", "El que muta frecuentemente", "El que viene del padre"], correcta: 0 },
-            { pregunta: "¿Cuántos cromosomas tiene un óvulo o espermatozoide?", opciones: ["46", "48", "23", "22"], correcta: 2 },
-        ]
-    },
-    biotecnologia: {
-        titulo: "Biotecnología Reproductiva",
-        emoji: "🧪",
-        descripcion: "Técnicas modernas de reproducción asistida",
-        preguntas: [
-            { pregunta: "¿Qué significa FIV?", opciones: ["Fecundación In Vitro", "Fertilización Intrauterina Voluntaria", "Feto In Vivo", "Fase de Implantación Vital"], correcta: 0 },
-            { pregunta: "¿En qué consiste la inseminación artificial?", opciones: ["Crear embriones en laboratorio", "Introducir espermatozoides directamente en el tracto reproductor", "Transferir embriones congelados", "Estimular la ovulación con hormonas"], correcta: 1 },
-            { pregunta: "¿Qué es la criopreservación de embriones?", opciones: ["Cultivar embriones a alta temperatura", "Congelar embriones para uso futuro", "Seleccionar embriones por sexo", "Fertilizar óvulos sin espermatozoides"], correcta: 1 },
-            { pregunta: "¿Para qué sirve el diagnóstico genético preimplantacional (DGP)?", opciones: ["Aumentar la tasa de gemelos", "Detectar enfermedades genéticas antes de implantar el embrión", "Seleccionar el color de ojos", "Acelerar el desarrollo embrionario"], correcta: 1 },
-            { pregunta: "¿Qué es la donación de óvulos?", opciones: ["Una mujer recibe óvulos de otra para lograr el embarazo", "Se transfiere el útero completo", "Se clona el ADN materno", "Se usa un óvulo sin fertilizar"], correcta: 0 },
+            { pregunta: "¿Cuántos días dura en promedio el ciclo menstrual?", opciones: ["21 días","28 días","35 días","14 días"], correcta: 1 },
+            { pregunta: "¿Qué fase sigue después de la menstruación?", opciones: ["Lútea","Ovulatoria","Folicular","Secretora"], correcta: 2 },
+            { pregunta: "¿Qué estructura produce progesterona tras la ovulación?", opciones: ["Folículo de Graaf","Cuerpo lúteo","Endometrio","Hipófisis"], correcta: 1 },
+            { pregunta: "¿Cuándo es más probable la fecundación?", opciones: ["En la menstruación","Al inicio del ciclo","Alrededor de la ovulación","Al final del ciclo"], correcta: 2 },
+            { pregunta: "Si no hay fecundación, ¿qué ocurre con el cuerpo lúteo?", opciones: ["Crece más","Se convierte en folículo","Degenera y baja la progesterona","Se mantiene igual"], correcta: 2 }
         ]
     }
 };
-// ============================================================
 
-let nombreAlumno = '';
-let cuestionarioActual = null;
-let claveActual = '';
-let respuestas = [];
+// ── Estado global ─────────────────────────────────────────
+let nombreAlumno  = '';
+let cedulaAlumno  = '';
+let quizActual    = null;
+let claveActual   = '';
+let respuestas    = [];
+let claveEditando = '';
 
+// ── Cargar/guardar cuestionarios ──────────────────────────
+function getCuestionarios() {
+    const saved = localStorage.getItem('fequundar_cuestionarios');
+    return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(CUESTIONARIOS_DEFAULT));
+}
+function saveCuestionarios(data) {
+    localStorage.setItem('fequundar_cuestionarios', JSON.stringify(data));
+}
+
+// ── LOGIN ESTUDIANTE ──────────────────────────────────────
 function entrar() {
-    const nombre = document.getElementById('nombre').value.trim();
-    if (!nombre) { alert('Por favor escribe tu nombre'); return; }
+    const nombre = document.getElementById('inp-nombre').value.trim();
+    const cedula = document.getElementById('inp-cedula').value.trim();
+    if (!nombre || !cedula) { alert('Por favor ingresa tu nombre y número de identificación'); return; }
     nombreAlumno = nombre;
+    cedulaAlumno = cedula;
     mostrarCatalogo();
 }
 
-function mostrarCatalogo() {
-    document.getElementById('start-section').style.display = 'none';
-    document.getElementById('quiz-section').style.display = 'none';
-    document.getElementById('result-section').style.display = 'none';
-    document.getElementById('catalogo-section').style.display = 'block';
+function cerrarSesion() {
+    nombreAlumno = '';
+    cedulaAlumno = '';
+    mostrar('login-section');
+    document.getElementById('inp-nombre').value = '';
+    document.getElementById('inp-cedula').value = '';
+}
 
+// ── CATÁLOGO ──────────────────────────────────────────────
+function mostrarCatalogo() {
+    mostrar('catalogo-section');
     document.getElementById('bienvenida-msg').textContent =
-        `👋 Hola, ${nombreAlumno}. Elige un cuestionario para comenzar.`;
+        `👋 Hola, ${nombreAlumno}. ID: ${cedulaAlumno} — Elige un cuestionario para comenzar.`;
 
     const grid = document.getElementById('cuestionarios-grid');
     grid.innerHTML = '';
+    const cuestionarios = getCuestionarios();
+    const claves = Object.keys(cuestionarios);
 
-    Object.entries(CUESTIONARIOS).forEach(([clave, data]) => {
+    if (claves.length === 0) {
+        grid.innerHTML = '<p style="color:#888;grid-column:1/-1;text-align:center">No hay cuestionarios disponibles aún.</p>';
+        return;
+    }
+    claves.forEach(clave => {
+        const d = cuestionarios[clave];
         const card = document.createElement('div');
         card.className = 'quiz-card';
         card.innerHTML = `
-            <div class="emoji">${data.emoji}</div>
-            <div class="titulo">${data.titulo}</div>
-            <div class="desc">${data.descripcion}</div>
-            <div class="preguntas">${data.preguntas.length} preguntas</div>
+            <div class="emoji">${d.emoji || '📝'}</div>
+            <div class="titulo">${d.titulo}</div>
+            <div class="desc">${d.descripcion}</div>
+            <div class="npregs">${d.preguntas.length} preguntas</div>
         `;
         card.onclick = () => iniciarCuestionario(clave);
         grid.appendChild(card);
     });
 }
 
+// ── CUESTIONARIO ──────────────────────────────────────────
 function iniciarCuestionario(clave) {
+    const cuestionarios = getCuestionarios();
     claveActual = clave;
-    cuestionarioActual = CUESTIONARIOS[clave];
-    respuestas = new Array(cuestionarioActual.preguntas.length).fill(null);
+    quizActual  = cuestionarios[clave];
+    respuestas  = new Array(quizActual.preguntas.length).fill(null);
 
-    document.getElementById('catalogo-section').style.display = 'none';
-    document.getElementById('quiz-section').style.display = 'block';
-    document.getElementById('quiz-title').textContent =
-        cuestionarioActual.emoji + ' ' + cuestionarioActual.titulo;
-    document.getElementById('quiz-alumno').textContent = `Alumno: ${nombreAlumno}`;
-
+    document.getElementById('quiz-title').textContent  = quizActual.emoji + ' ' + quizActual.titulo;
+    document.getElementById('quiz-alumno').textContent = `${nombreAlumno}  |  ID: ${cedulaAlumno}`;
+    mostrar('quiz-section');
     renderPreguntas();
 }
 
 function renderPreguntas() {
     const container = document.getElementById('questions-container');
     container.innerHTML = '';
-    cuestionarioActual.preguntas.forEach((p, i) => {
+    quizActual.preguntas.forEach((p, i) => {
         const card = document.createElement('div');
         card.className = 'question-card';
         card.innerHTML = `
@@ -318,88 +519,246 @@ function renderPreguntas() {
             <div class="options">
                 ${p.opciones.map((op, j) => `
                     <label>
-                        <input type="radio" name="q${i}" value="${j}" onchange="registrarRespuesta(${i}, ${j})">
+                        <input type="radio" name="q${i}" value="${j}" onchange="registrarRespuesta(${i},${j})">
                         ${op}
-                    </label>
-                `).join('')}
-            </div>
-        `;
+                    </label>`).join('')}
+            </div>`;
         container.appendChild(card);
     });
     actualizarProgreso();
 }
 
-function registrarRespuesta(pregunta, opcion) {
-    respuestas[pregunta] = opcion;
+function registrarRespuesta(preg, op) {
+    respuestas[preg] = op;
     actualizarProgreso();
 }
 
 function actualizarProgreso() {
-    const respondidas = respuestas.filter(r => r !== null).length;
-    const total = cuestionarioActual.preguntas.length;
-    document.getElementById('progress-bar').style.width = (respondidas / total * 100) + '%';
-    document.getElementById('question-counter').textContent =
-        `${respondidas} de ${total} preguntas respondidas`;
+    const resp  = respuestas.filter(r => r !== null).length;
+    const total = quizActual.preguntas.length;
+    document.getElementById('progress-bar').style.width    = (resp / total * 100) + '%';
+    document.getElementById('question-counter').textContent = `${resp} de ${total} preguntas respondidas`;
 }
 
 function enviarRespuestas() {
-    if (respuestas.includes(null)) {
-        alert('Por favor responde todas las preguntas antes de enviar.');
-        return;
-    }
+    if (respuestas.includes(null)) { alert('Por favor responde todas las preguntas antes de enviar.'); return; }
     let correctas = 0;
-    respuestas.forEach((r, i) => {
-        if (r === cuestionarioActual.preguntas[i].correcta) correctas++;
-    });
-    const pct = Math.round((correctas / cuestionarioActual.preguntas.length) * 100);
+    respuestas.forEach((r, i) => { if (r === quizActual.preguntas[i].correcta) correctas++; });
+    const pct = Math.round(correctas / quizActual.preguntas.length * 100);
 
-    document.getElementById('quiz-section').style.display = 'none';
-    document.getElementById('result-section').style.display = 'block';
-    document.getElementById('score-number').textContent = correctas;
-    document.getElementById('score-total').textContent = cuestionarioActual.preguntas.length;
-    document.getElementById('quiz-title-result').textContent = cuestionarioActual.titulo;
+    mostrar('result-section');
+    document.getElementById('score-number').textContent  = correctas;
+    document.getElementById('score-total').textContent   = quizActual.preguntas.length;
+    document.getElementById('result-titulo').textContent = quizActual.titulo;
     document.getElementById('sheets-status').textContent = '';
-    document.getElementById('sending-msg').style.display = 'block';
-
-    let msg = pct >= 80 ? '🎉 ¡Excelente trabajo!' :
-              pct >= 60 ? '👍 Buen esfuerzo, sigue practicando' :
-                          '💪 Continúa estudiando, tú puedes';
-    document.getElementById('result-msg').textContent = msg;
+    document.getElementById('saving-msg').style.display  = 'block';
+    document.getElementById('result-msg').textContent    =
+        pct >= 80 ? '🎉 ¡Excelente trabajo!' :
+        pct >= 60 ? '👍 Buen esfuerzo, sigue practicando' :
+                    '💪 Continúa estudiando, tú puedes';
 
     enviarASheets(correctas, pct);
 }
 
 function enviarASheets(correctas, porcentaje) {
     const datos = {
-        fecha: new Date().toLocaleString('es-MX'),
-        nombre: nombreAlumno,
-        grado: '-',
-        cuestionario: cuestionarioActual.titulo,
-        correctas: correctas,
-        total: cuestionarioActual.preguntas.length,
-        porcentaje: porcentaje + '%',
-        respuestas: respuestas.join(',')
+        fecha       : new Date().toLocaleString('es-CO'),
+        nombre      : nombreAlumno,
+        cedula      : cedulaAlumno,
+        cuestionario: quizActual.titulo,
+        correctas   : correctas,
+        total       : quizActual.preguntas.length,
+        porcentaje  : porcentaje + '%',
+        respuestas  : respuestas.join(',')
     };
     fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
+        method : 'POST',
+        mode   : 'no-cors',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
+        body   : JSON.stringify(datos)
     })
     .then(() => {
-        document.getElementById('sending-msg').style.display = 'none';
-        document.getElementById('sheets-status').innerHTML =
-            '<span class="success-msg">✅ Resultado guardado correctamente</span>';
+        document.getElementById('saving-msg').style.display = 'none';
+        document.getElementById('sheets-status').innerHTML  = '<span class="success-msg">✅ Resultado guardado correctamente</span>';
     })
     .catch(() => {
-        document.getElementById('sending-msg').style.display = 'none';
-        document.getElementById('sheets-status').innerHTML =
-            '<span class="error-msg">⚠️ No se pudo guardar. Revisa la conexión.</span>';
+        document.getElementById('saving-msg').style.display = 'none';
+        document.getElementById('sheets-status').innerHTML  = '<span class="error-msg">⚠️ No se pudo guardar. Revisa la conexión.</span>';
     });
 }
 
-function volverCatalogo() {
-    mostrarCatalogo();
+// ── ADMIN LOGIN ───────────────────────────────────────────
+function abrirLoginAdmin() {
+    document.getElementById('inp-admin-pass').value = '';
+    document.getElementById('modal-login-admin').classList.add('active');
+    setTimeout(() => document.getElementById('inp-admin-pass').focus(), 100);
+}
+
+function verificarAdmin() {
+    const pass = document.getElementById('inp-admin-pass').value;
+    if (pass === ADMIN_PASSWORD) {
+        cerrarModal('modal-login-admin');
+        abrirPanelAdmin();
+    } else {
+        alert('Contraseña incorrecta');
+    }
+}
+
+// ── PANEL ADMIN ───────────────────────────────────────────
+function abrirPanelAdmin() {
+    renderAdminLista();
+    document.getElementById('modal-admin').classList.add('active');
+}
+
+function renderAdminLista() {
+    const cuestionarios = getCuestionarios();
+    const container = document.getElementById('admin-lista-cuestionarios');
+    container.innerHTML = '';
+    const claves = Object.keys(cuestionarios);
+    if (claves.length === 0) {
+        container.innerHTML = '<p style="color:#888;margin-bottom:10px">Sin cuestionarios aún.</p>';
+        return;
+    }
+    claves.forEach(clave => {
+        const d = cuestionarios[clave];
+        const item = document.createElement('div');
+        item.className = 'quiz-admin-item';
+        item.innerHTML = `
+            <div class="info">
+                <strong>${d.emoji || '📝'} ${d.titulo}</strong>
+                <span>${d.preguntas.length} preguntas · ${d.descripcion}</span>
+            </div>
+            <div class="actions">
+                <button class="btn btn-secondary btn-sm" onclick="abrirEditar('${clave}')">✏️ Editar</button>
+                <button class="btn btn-danger btn-sm" onclick="eliminarCuestionario('${clave}')">🗑️</button>
+            </div>`;
+        container.appendChild(item);
+    });
+}
+
+function crearCuestionario() {
+    const emoji  = document.getElementById('new-emoji').value.trim()  || '📝';
+    const titulo = document.getElementById('new-titulo').value.trim();
+    const desc   = document.getElementById('new-desc').value.trim();
+    if (!titulo) { alert('El título es obligatorio'); return; }
+
+    const cuestionarios = getCuestionarios();
+    const clave = 'quiz_' + Date.now();
+    cuestionarios[clave] = { emoji, titulo, descripcion: desc, preguntas: [] };
+    saveCuestionarios(cuestionarios);
+
+    document.getElementById('new-emoji').value  = '';
+    document.getElementById('new-titulo').value = '';
+    document.getElementById('new-desc').value   = '';
+
+    renderAdminLista();
+    alert(`✅ Cuestionario "${titulo}" creado. Ahora edítalo para agregar preguntas.`);
+}
+
+function eliminarCuestionario(clave) {
+    const cuestionarios = getCuestionarios();
+    if (!confirm(`¿Eliminar "${cuestionarios[clave].titulo}"? Esta acción no se puede deshacer.`)) return;
+    delete cuestionarios[clave];
+    saveCuestionarios(cuestionarios);
+    renderAdminLista();
+}
+
+// ── EDITAR CUESTIONARIO ───────────────────────────────────
+function abrirEditar(clave) {
+    claveEditando = clave;
+    const cuestionarios = getCuestionarios();
+    const d = cuestionarios[clave];
+
+    document.getElementById('editar-titulo-modal').textContent = 'Editar: ' + d.titulo;
+    document.getElementById('edit-emoji').value  = d.emoji || '';
+    document.getElementById('edit-titulo').value = d.titulo;
+    document.getElementById('edit-desc').value   = d.descripcion;
+
+    const container = document.getElementById('edit-preguntas-container');
+    container.innerHTML = '';
+    d.preguntas.forEach((p, i) => agregarPreguntaConDatos(p, i));
+
+    cerrarModal('modal-admin');
+    document.getElementById('modal-editar').classList.add('active');
+}
+
+function agregarPregunta() {
+    const container = document.getElementById('edit-preguntas-container');
+    const idx = container.querySelectorAll('.pregunta-admin').length;
+    agregarPreguntaConDatos({ pregunta: '', opciones: ['','','',''], correcta: 0 }, idx);
+}
+
+function agregarPreguntaConDatos(p, idx) {
+    const container = document.getElementById('edit-preguntas-container');
+    const div = document.createElement('div');
+    div.className = 'pregunta-admin';
+    div.dataset.idx = idx;
+    div.innerHTML = `
+        <label style="margin-bottom:4px;font-size:0.85rem">Pregunta ${idx + 1}</label>
+        <input type="text" class="p-texto" placeholder="Escribe la pregunta aquí" value="${escHtml(p.pregunta)}">
+        <div class="opciones-admin">
+            <input type="text" class="p-op" placeholder="Opción A" value="${escHtml(p.opciones[0] || '')}">
+            <input type="text" class="p-op" placeholder="Opción B" value="${escHtml(p.opciones[1] || '')}">
+            <input type="text" class="p-op" placeholder="Opción C" value="${escHtml(p.opciones[2] || '')}">
+            <input type="text" class="p-op" placeholder="Opción D" value="${escHtml(p.opciones[3] || '')}">
+        </div>
+        <div class="correcta-row">
+            <span>Respuesta correcta:</span>
+            <select class="p-correcta">
+                <option value="0" ${p.correcta===0?'selected':''}>A</option>
+                <option value="1" ${p.correcta===1?'selected':''}>B</option>
+                <option value="2" ${p.correcta===2?'selected':''}>C</option>
+                <option value="3" ${p.correcta===3?'selected':''}>D</option>
+            </select>
+            <button class="btn btn-danger btn-sm" onclick="this.closest('.pregunta-admin').remove();renumerarPreguntas()">🗑️ Eliminar</button>
+        </div>`;
+    container.appendChild(div);
+}
+
+function renumerarPreguntas() {
+    document.querySelectorAll('.pregunta-admin').forEach((div, i) => {
+        div.querySelector('label').textContent = `Pregunta ${i + 1}`;
+    });
+}
+
+function guardarEdicion() {
+    const emoji  = document.getElementById('edit-emoji').value.trim()  || '📝';
+    const titulo = document.getElementById('edit-titulo').value.trim();
+    const desc   = document.getElementById('edit-desc').value.trim();
+    if (!titulo) { alert('El título es obligatorio'); return; }
+
+    const preguntas = [];
+    let valido = true;
+    document.querySelectorAll('.pregunta-admin').forEach(div => {
+        const texto   = div.querySelector('.p-texto').value.trim();
+        const ops     = [...div.querySelectorAll('.p-op')].map(i => i.value.trim());
+        const correcta = parseInt(div.querySelector('.p-correcta').value);
+        if (!texto || ops.some(o => !o)) { valido = false; return; }
+        preguntas.push({ pregunta: texto, opciones: ops, correcta });
+    });
+
+    if (!valido) { alert('Por favor completa todos los campos de cada pregunta y sus opciones.'); return; }
+    if (preguntas.length === 0) { alert('Agrega al menos una pregunta.'); return; }
+
+    const cuestionarios = getCuestionarios();
+    cuestionarios[claveEditando] = { emoji, titulo, descripcion: desc, preguntas };
+    saveCuestionarios(cuestionarios);
+
+    cerrarModal('modal-editar');
+    abrirPanelAdmin();
+    alert(`✅ Cuestionario "${titulo}" guardado con ${preguntas.length} preguntas.`);
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+function mostrar(id) {
+    ['login-section','catalogo-section','quiz-section','result-section']
+        .forEach(s => document.getElementById(s).classList.toggle('hidden', s !== id));
+}
+function cerrarModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 </script>
 </body>
