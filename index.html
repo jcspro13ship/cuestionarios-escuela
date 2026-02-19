@@ -873,32 +873,31 @@ function cargarResultados() {
     const cont = document.getElementById('resultados-contenido');
     cont.innerHTML = '<div class="loading-msg">⏳ Cargando datos...</div>';
 
-    fetch(GOOGLE_SCRIPT_URL, { redirect: 'follow' })
-    .then(r => r.text())
-    .then(texto => {
-        let data;
-        try {
-            data = JSON.parse(texto);
-        } catch(ex) {
-            // A veces Google envuelve la respuesta, intentar limpiarla
-            const match = texto.match(/(\[.*\]|\{.*\})/s);
-            if (match) data = JSON.parse(match[1]);
-            else throw new Error('Respuesta inesperada del servidor');
+    // Crear elemento script para JSONP (evita el bloqueo CORS)
+    const script = document.createElement('script');
+    window._jsonpCallback = function(data) {
+        document.getElementById('jsonp-script')?.remove();
+        if (data.error) {
+            cont.innerHTML = `<div style="background:#fff3e0;border-radius:10px;padding:16px;color:#bf360c;font-size:0.88rem">
+                ⚠️ Error del servidor: ${data.error}</div>`;
+            return;
         }
-        if (data.error) throw new Error(data.error);
         renderResultados(Array.isArray(data) ? data : []);
-    })
-    .catch(err => {
-        cont.innerHTML = `
-            <div style="background:#fff3e0;border-radius:10px;padding:16px;
-                        color:#bf360c;font-size:0.88rem;line-height:1.8">
-                ⚠️ Error al cargar: <strong>${err.message}</strong><br><br>
-                <strong>Pasos a verificar:</strong><br>
-                1. Abre la URL del script en el navegador y confirma que ves un JSON<br>
-                2. En "Administrar implementaciones" verifica que el acceso sea <strong>"Cualquier usuario"</strong><br>
-                3. Asegúrate de haber republicado como <strong>nueva versión</strong> tras el último cambio
-            </div>`;
-    });
+    };
+
+    script.id  = 'jsonp-script';
+    script.src = GOOGLE_SCRIPT_URL + '?callback=_jsonpCallback';
+    script.onerror = function() {
+        document.getElementById('jsonp-script')?.remove();
+        cont.innerHTML = `<div style="background:#fff3e0;border-radius:10px;padding:16px;color:#bf360c;font-size:0.88rem;line-height:1.8">
+            ⚠️ No se pudieron cargar los resultados.<br><br>
+            <strong>Verifica:</strong><br>
+            • La URL del script está correctamente pegada en index.html<br>
+            • En "Administrar implementaciones" el acceso es <strong>"Cualquier usuario"</strong><br>
+            • Republicaste como <strong>nueva versión</strong> tras el último cambio
+        </div>`;
+    };
+    document.body.appendChild(script);
 }
 function renderResultados(data) {
     const cont = document.getElementById('resultados-contenido');
