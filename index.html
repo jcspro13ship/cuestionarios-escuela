@@ -451,44 +451,7 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWg0jQtR8sEW
 const ADMIN_PASSWORD    = 'fequundar2026';
 // ============================================================
 
-const CUESTIONARIOS_DEFAULT = {
-    anatomia: {
-        titulo: "Anatomía Reproductiva", emoji: "🔬",
-        descripcion: "Órganos y estructuras del sistema reproductivo",
-        preguntas: [
-            {
-                pregunta: "¿Cuál es la función principal de los ovarios?",
-                opciones: ["Producir estrógeno y óvulos","Transportar el óvulo","Nutrir al embrión","Producir progesterona únicamente"],
-                correcta: 0,
-                explicacion: "Los ovarios producen óvulos y hormonas como el estrógeno y la progesterona, siendo esenciales en la reproducción."
-            },
-            {
-                pregunta: "¿Cómo se llama el proceso de liberación del óvulo?",
-                opciones: ["Menstruación","Ovulación","Fecundación","Implantación"],
-                correcta: 1,
-                explicacion: "La ovulación es la liberación del óvulo maduro desde el folículo ovárico hacia la trompa de Falopio."
-            },
-            {
-                pregunta: "¿Dónde ocurre normalmente la fecundación?",
-                opciones: ["En el útero","En el ovario","En la trompa de Falopio","En la vagina"],
-                correcta: 2,
-                explicacion: "La fecundación ocurre en el tercio externo de la trompa de Falopio, donde el espermatozoide se une al óvulo."
-            },
-            {
-                pregunta: "¿Cuál es la función del útero?",
-                opciones: ["Producir óvulos","Alojar y nutrir al feto","Filtrar la sangre","Regular hormonas"],
-                correcta: 1,
-                explicacion: "El útero es el órgano muscular donde el embrión se implanta y se desarrolla durante el embarazo."
-            },
-            {
-                pregunta: "¿Qué hormona dispara la ovulación?",
-                opciones: ["Estrógeno","Progesterona","LH (Hormona Luteinizante)","FSH"],
-                correcta: 2,
-                explicacion: "El pico de LH (Hormona Luteinizante) desencadena la ovulación aproximadamente 36 horas después de su aparición."
-            }
-        ]
-    }
-};
+
 
 // ── Estado ────────────────────────────────────────────────
 let nombreAlumno = '', cedulaAlumno = '';
@@ -499,13 +462,7 @@ let respondioActual = false;
 const LETRAS = ['A','B','C','D'];
 
 // ── Cuestionarios ─────────────────────────────────────────
-function getCuestionarios() {
-    const s = localStorage.getItem('fequundar_cuestionarios');
-    return s ? JSON.parse(s) : JSON.parse(JSON.stringify(CUESTIONARIOS_DEFAULT));
-}
-function saveCuestionarios(d) {
-    localStorage.setItem('fequundar_cuestionarios', JSON.stringify(d));
-}
+function getCuestionarios() { return window._quizzesCache || {}; }
 
 // ── LOGIN ─────────────────────────────────────────────────
 function entrar() {
@@ -528,36 +485,47 @@ function mostrarCatalogo() {
     document.getElementById('bienvenida-msg').textContent =
         `👋 Hola, ${nombreAlumno} · ID: ${cedulaAlumno} — Elige un cuestionario.`;
     const grid = document.getElementById('cuestionarios-grid');
-    grid.innerHTML = '';
-    const c = getCuestionarios();
-    const claves = Object.keys(c);
-    if (!claves.length) {
-        grid.innerHTML = '<p style="color:#bbb;grid-column:1/-1;text-align:center;padding:20px">No hay cuestionarios disponibles.</p>';
-        return;
-    }
-    claves.forEach(clave => {
-        const d = c[clave];
-        const card = document.createElement('div');
-        card.className = 'quiz-card';
-        card.innerHTML = `
-            <div class="emoji">${d.emoji||'📝'}</div>
-            <div class="titulo">${d.titulo}</div>
-            <div class="desc">${d.descripcion}</div>
-            <div class="npregs">${d.preguntas.length} preguntas</div>`;
-        card.onclick = () => iniciarCuestionario(clave);
-        grid.appendChild(card);
-    });
+    grid.innerHTML = '<p style="color:#aaa;grid-column:1/-1;text-align:center;padding:20px">⏳ Cargando cuestionarios...</p>';
+    const script = document.createElement('script');
+    window._quizzesCallback = function(data) {
+        document.getElementById('jsonp-quizzes')?.remove();
+        window._quizzesCache = {};
+        grid.innerHTML = '';
+        if (!data || !data.length) {
+            grid.innerHTML = '<p style="color:#bbb;grid-column:1/-1;text-align:center;padding:20px">No hay cuestionarios disponibles.</p>';
+            return;
+        }
+        data.forEach(d => {
+            window._quizzesCache[d.id] = d;
+            const card = document.createElement('div');
+            card.className = 'quiz-card';
+            card.innerHTML = `
+                <div class="emoji">${d.emoji||'📝'}</div>
+                <div class="titulo">${d.titulo}</div>
+                <div class="desc">${d.descripcion}</div>
+                <div class="npregs">${d.preguntas.length} preguntas</div>`;
+            card.onclick = () => iniciarCuestionario(d.id);
+            grid.appendChild(card);
+        });
+    };
+    script.id    = 'jsonp-quizzes';
+    script.src   = GOOGLE_SCRIPT_URL + '?action=quizzes&callback=_quizzesCallback';
+    script.onerror = function() {
+        grid.innerHTML = '<p style="color:#c62828;grid-column:1/-1;text-align:center;padding:20px">⚠️ No se pudieron cargar los cuestionarios.</p>';
+    };
+    document.body.appendChild(script);
 }
 
 // ── QUIZ ──────────────────────────────────────────────────
-function iniciarCuestionario(clave) {
-    const c = getCuestionarios();
-    claveActual  = clave;
-    quizActual   = c[clave];
+function iniciarCuestionario(id) {
+    const cache = window._quizzesCache || {};
+    claveActual  = id;
+    quizActual   = cache[id];
+    if (!quizActual) { alert('Error al cargar el cuestionario. Intenta de nuevo.'); return; }
     respuestas   = new Array(quizActual.preguntas.length).fill(null);
     preguntaIdx  = 0;
     mostrar('quiz-section');
-    document.getElementById('quiz-title').textContent  = quizActual.emoji + ' ' + quizActual.titulo;
+    document.getElementById('quiz-title').textContent  = (quizActual.emoji||'') + ' ' + quizActual.titulo;
     document.getElementById('quiz-alumno').textContent = `${nombreAlumno} · ID: ${cedulaAlumno}`;
     renderPreguntaActual();
 }
@@ -756,26 +724,81 @@ function cambiarTab(tabId, btn) {
     if (tabId === 'tab-resultados') cargarResultados();
 }
 function renderAdminLista() {
-    const c = getCuestionarios();
     const container = document.getElementById('admin-lista-cuestionarios');
-    container.innerHTML = '';
-    const claves = Object.keys(c);
-    if (!claves.length) { container.innerHTML = '<p style="color:#bbb;margin-bottom:10px">Sin cuestionarios aún.</p>'; return; }
-    claves.forEach(clave => {
-        const d = c[clave];
-        const item = document.createElement('div');
-        item.className = 'quiz-admin-item';
-        item.innerHTML = `
-            <div class="info">
-                <strong>${d.emoji||'📝'} ${d.titulo}</strong>
-                <span>${d.preguntas.length} preguntas · ${d.descripcion}</span>
-            </div>
-            <div class="actions">
-                <button class="btn btn-secondary btn-sm" onclick="abrirEditar('${clave}')">✏️ Editar</button>
-                <button class="btn btn-danger btn-sm" onclick="eliminarCuestionario('${clave}')">🗑️</button>
-            </div>`;
-        container.appendChild(item);
-    });
+    container.innerHTML = '<p style="color:#aaa;font-size:0.88rem">⏳ Cargando...</p>';
+    const script = document.createElement('script');
+    window._adminQuizzesCallback = function(data) {
+        document.getElementById('jsonp-admin-quizzes')?.remove();
+        window._quizzesCache = {};
+        container.innerHTML = '';
+        if (!data || !data.length) {
+            container.innerHTML = '<p style="color:#bbb;margin-bottom:10px">Sin cuestionarios aún.</p>';
+            return;
+        }
+        data.forEach(d => {
+            window._quizzesCache[d.id] = d;
+            const item = document.createElement('div');
+            item.className = 'quiz-admin-item';
+            item.innerHTML = `
+                <div class="info">
+                    <strong>${d.emoji||'📝'} ${d.titulo}</strong>
+                    <span>${d.preguntas.length} preguntas · ${d.descripcion}</span>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-secondary btn-sm" onclick="abrirEditar('${d.id}')">✏️ Editar</button>
+                    <button class="btn btn-danger btn-sm" onclick="eliminarCuestionario('${d.id}')">🗑️</button>
+                </div>`;
+            container.appendChild(item);
+        });
+    };
+    script.id    = 'jsonp-admin-quizzes';
+    script.src   = GOOGLE_SCRIPT_URL + '?action=quizzes&callback=_adminQuizzesCallback';
+    script.onerror = function() {
+        container.innerHTML = '<p style="color:#c62828">⚠️ No se pudieron cargar los cuestionarios.</p>';
+    };
+    document.body.appendChild(script);
+}
+
+function crearCuestionario() {
+    const emoji  = document.getElementById('new-emoji').value.trim()  || '📝';
+    const titulo = document.getElementById('new-titulo').value.trim();
+    const desc   = document.getElementById('new-desc').value.trim();
+    if (!titulo) { alert('El título es obligatorio'); return; }
+    const nuevoQuiz = {
+        accion      : 'guardarQuiz',
+        id          : 'quiz_' + Date.now(),
+        titulo      : titulo,
+        emoji       : emoji,
+        descripcion : desc,
+        preguntas   : []
+    };
+    fetch(GOOGLE_SCRIPT_URL, {
+        method : 'POST',
+        mode   : 'no-cors',
+        headers: {'Content-Type': 'application/json'},
+        body   : JSON.stringify(nuevoQuiz)
+    }).then(() => {
+        document.getElementById('new-emoji').value  = '';
+        document.getElementById('new-titulo').value = '';
+        document.getElementById('new-desc').value   = '';
+        alert(`✅ "${titulo}" creado. Ahora edítalo para agregar preguntas.`);
+        renderAdminLista();
+    }).catch(() => alert('⚠️ Error al crear el cuestionario.'));
+}
+
+function eliminarCuestionario(id) {
+    const cache = window._quizzesCache || {};
+    const quiz  = cache[id];
+    if (!quiz || !confirm(`¿Eliminar "${quiz.titulo}"?`)) return;
+    fetch(GOOGLE_SCRIPT_URL, {
+        method : 'POST',
+        mode   : 'no-cors',
+        headers: {'Content-Type': 'application/json'},
+        body   : JSON.stringify({ accion: 'eliminarQuiz', id: id })
+    }).then(() => {
+        alert('✅ Cuestionario eliminado.');
+        renderAdminLista();
+    }).catch(() => alert('⚠️ Error al eliminar.'));
 }
 function crearCuestionario() {
     const emoji  = document.getElementById('new-emoji').value.trim()  || '📝';
@@ -852,20 +875,32 @@ function guardarEdicion() {
     if (!titulo) { alert('El título es obligatorio'); return; }
     const preguntas = []; let valido = true;
     document.querySelectorAll('.pregunta-admin').forEach(div => {
-        const texto      = div.querySelector('.p-texto').value.trim();
-        const ops        = [...div.querySelectorAll('.p-op')].map(i => i.value.trim());
-        const correcta   = parseInt(div.querySelector('.p-correcta').value);
+        const texto       = div.querySelector('.p-texto').value.trim();
+        const ops         = [...div.querySelectorAll('.p-op')].map(i => i.value.trim());
+        const correcta    = parseInt(div.querySelector('.p-correcta').value);
         const explicacion = div.querySelector('.p-explicacion').value.trim();
-        if (!texto || ops.some(o=>!o)) { valido=false; return; }
-        preguntas.push({ pregunta:texto, opciones:ops, correcta, explicacion });
+        if (!texto || ops.some(o => !o)) { valido = false; return; }
+        preguntas.push({ pregunta: texto, opciones: ops, correcta, explicacion });
     });
     if (!valido)           { alert('Completa todos los campos de cada pregunta.'); return; }
     if (!preguntas.length) { alert('Agrega al menos una pregunta.'); return; }
-    const c = getCuestionarios();
-    c[claveEditando] = { emoji, titulo, descripcion:desc, preguntas };
-    saveCuestionarios(c);
-    cerrarModal('modal-editar'); abrirPanelAdmin();
-    alert(`✅ "${titulo}" guardado con ${preguntas.length} preguntas.`);
+    fetch(GOOGLE_SCRIPT_URL, {
+        method : 'POST',
+        mode   : 'no-cors',
+        headers: {'Content-Type': 'application/json'},
+        body   : JSON.stringify({
+            accion      : 'guardarQuiz',
+            id          : claveEditando,
+            emoji       : emoji,
+            titulo      : titulo,
+            descripcion : desc,
+            preguntas   : preguntas
+        })
+    }).then(() => {
+        alert(`✅ "${titulo}" guardado con ${preguntas.length} preguntas.`);
+        cerrarModal('modal-editar');
+        abrirPanelAdmin();
+    }).catch(() => alert('⚠️ Error al guardar.'));
 }
 
 // ── RESULTADOS ADMIN ──────────────────────────────────────
